@@ -1,3 +1,4 @@
+using System.Text;
 using static API.Utils.BitbboardUtils;
 using static API.Utils.ChessHelpers;
 namespace API.Logic
@@ -60,37 +61,53 @@ namespace API.Logic
 
 
 
-        // public static string UpdateFen(Board board)
-        // {
-        //     StringBuilder fen = new StringBuilder();
-        //     for (int row = 7; row >= 0; row--) //from a8 to a1
-        //     {
-        //         int emptyCount = 0;
-        //         for (int col = 0; col < 8; col++) //from a to h
-        //         {
-        //             char piece = board.GetPieceAt(row * 8 + col);
 
-        //             if (piece == 'x') emptyCount++;
-        //             else
-        //             {
-        //                 if (emptyCount > 0)
-        //                 {
-        //                     fen.Append(emptyCount);
-        //                     emptyCount = 0;
-        //                 }
-        //                 fen.Append(piece);
-        //             }
-        //         }
-        //         if (emptyCount > 0) fen.Append(emptyCount);
-        //         if (row > 0) fen.Append('/');
+        public static string UpdateFen(Board board)
+        {
+            StringBuilder fen = new StringBuilder();
+            for (int rank = 0; rank < 8; rank++)
+            {
+                if (rank > 0) fen.Append('/');
+                int blankSpaces = 0;
+                for (int file = 0; file < 8; file++)
+                {
+                    int square = rank * 8 + file;
+                    bool foundPiece = false;
 
-        //     }
+                    for (int piece = P; piece <= n; piece++)
+                    {
+                        ulong bit = 1UL << square;
+                        if ((board.Bitboards[piece] & bit) != 0)
+                        {
+                            if (blankSpaces > 0)
+                            {
+                                fen.Append(blankSpaces);
+                                blankSpaces = 0;
+                            }
+                            fen.Append(AsciiPiece[piece]);
+                            foundPiece = true;
+                            break;
+                        }
+                    }
+                    if (!foundPiece) blankSpaces++;
+                }
+                if (blankSpaces > 0) fen.Append(blankSpaces);
+            }
+            fen.Append(' ').Append(board.Side == White ? 'w' : 'b');
+            fen.Append(' ');
+            if (board.Castle == 0) fen.Append('-');
+            else
+            {
+                if ((board.Castle & WK) != 0) fen.Append('K');
+                if ((board.Castle & WQ) != 0) fen.Append('Q');
+                if ((board.Castle & BK) != 0) fen.Append('k');
+                if ((board.Castle & BQ) != 0) fen.Append('q');
+            }
+            fen.Append(' ');
+            fen.Append(board.Enpassant != None ? Coordinates[board.Enpassant] : "-");
+            fen.Append(' ').Append(board.HalfMoveClock).Append(' ').Append(board.FullMoveNumber);
+            return fen.ToString();
+        }
 
-        //     fen.Append(' ').Append(board.ActiveColor == Color.White ? 'w' : 'b');
-
-        //     fen.Append(" KQkq - 0 1");
-
-        //     return fen.ToString();
-        // }
     }
 }
