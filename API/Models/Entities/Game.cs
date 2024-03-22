@@ -12,8 +12,8 @@ namespace API.Models.Entities
             Id = Guid.NewGuid().ToString();
         }
         public string Id { get; set; }
-        public long TopPlayerId { get; set; }
-        public long BottomPlayerId { get; set; }
+        public long? TopPlayerId { get; set; }
+        public long? BottomPlayerId { get; set; }
         public User TopPlayer { get; set; }
         public User BottomPlayer { get; set; }
         public string Fen { get; set; }

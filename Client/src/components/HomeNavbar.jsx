@@ -24,7 +24,7 @@ function HomeNavbar() {
                 Logout
               </Nav.Link>
               <Nav.Link as={Link} to={`/user-play`}>
-                Profile
+                Play Game
               </Nav.Link>
             </Nav>
           )}

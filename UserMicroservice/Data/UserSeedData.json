@@ -1,62 +1,62 @@
 [
-   {
-      "Email": "john.doe@example.com",
-      "UserName": "johnD",
-      "Password": "Joh$Pass123",
-      "PhoneNumber": "555-1234"
-   },
-   {
-      "Email": "jane.smith@example.com",
-      "UserName": "janeS",
-      "Password": "Jan3Smi$th",
-      "PhoneNumber": "555-1235"
-   },
-   {
-      "Email": "michael.jones@example.com",
-      "UserName": "mikeJ",
-      "Password": "Mike@2023",
-      "PhoneNumber": "555-1236"
-   },
-   {
-      "Email": "sarah.johnson@example.com",
-      "UserName": "sarahJ",
-      "Password": "Sar4h!J",
-      "PhoneNumber": "555-1237"
-   },
-   {
-      "Email": "brian.williams@example.com",
-      "UserName": "brianW",
-      "Password": "Br1anWills",
-      "PhoneNumber": "555-1238"
-   },
-   {
-      "Email": "emily.davis@example.com",
-      "UserName": "emilyD",
-      "Password": "Emily#Dav1s",
-      "PhoneNumber": "555-1239"
-   },
-   {
-      "Email": "kevin.brown@example.com",
-      "UserName": "kevinB",
-      "Password": "Kev_Brownie",
-      "PhoneNumber": "555-1240"
-   },
-   {
-      "Email": "linda.white@example.com",
-      "UserName": "lindaW",
-      "Password": "Lind@White",
-      "PhoneNumber": "555-1241"
-   },
-   {
-      "Email": "steven.rodriguez@example.com",
-      "UserName": "steveR",
-      "Password": "St3v3_Rod",
-      "PhoneNumber": "555-1242"
-   },
-   {
-      "Email": "karen.martinez@example.com",
-      "UserName": "karenM",
-      "Password": "Karen_Martz",
-      "PhoneNumber": "555-1243"
-   }
+  {
+    "Email": "john.doe@example.com",
+    "UserName": "johnD",
+    "Password": "Joh$Pass123",
+    "PhoneNumber": "555-1234"
+  },
+  {
+    "Email": "jane.smith@example.com",
+    "UserName": "janeS",
+    "Password": "Jan3Smi$th",
+    "PhoneNumber": "555-1235"
+  },
+  {
+    "Email": "michael.jones@example.com",
+    "UserName": "mikeJ",
+    "Password": "Mike@2023",
+    "PhoneNumber": "555-123 6"
+  },
+  {
+    "Email": "sarah.johnson@example.com",
+    "UserName": "sarahJ",
+    "Password": "Sar4h!J",
+    "PhoneNumber": "555-1237"
+  },
+  {
+    "Email": "brian.williams@example.com",
+    "UserName": "brianW",
+    "Password": "Br1anWills",
+    "PhoneNumber": "555-1238"
+  },
+  {
+    "Email": "emily.davis@example.com",
+    "UserName": "emilyD",
+    "Password": "Emily#Dav1s",
+    "PhoneNumber": "555-1239"
+  },
+  {
+    "Email": "kevin.brown@example.com",
+    "UserName": "kevinB",
+    "Password": "Kev_Brownie",
+    "PhoneNumber": "555-1240"
+  },
+  {
+    "Email": "linda.white@example.com",
+    "UserName": "lindaW",
+    "Password": "Lind@White",
+    "PhoneNumber": "555-1241"
+  },
+  {
+    "Email": "steven.rodriguez@example.com",
+    "UserName": "steveR",
+    "Password": "St3v3_Rod",
+    "PhoneNumber": "555-1242"
+  },
+  {
+    "Email": "karen.martinez@example.com",
+    "UserName": "karenM",
+    "Password": "Karen_Martz",
+    "PhoneNumber": "555-1243"
+  }
 ]

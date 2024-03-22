@@ -58,10 +58,6 @@ namespace API.Logic
             board.PreviousEnpassant = board.Enpassant;
             board.UpdateOccupancy();
         }
-
-
-
-
         public static string UpdateFen(Board board)
         {
             StringBuilder fen = new StringBuilder();
@@ -69,6 +65,7 @@ namespace API.Logic
             {
                 if (rank > 0) fen.Append('/');
                 int blankSpaces = 0;
+
                 for (int file = 0; file < 8; file++)
                 {
                     int square = rank * 8 + file;
@@ -89,8 +86,10 @@ namespace API.Logic
                             break;
                         }
                     }
+
                     if (!foundPiece) blankSpaces++;
                 }
+
                 if (blankSpaces > 0) fen.Append(blankSpaces);
             }
             fen.Append(' ').Append(board.Side == White ? 'w' : 'b');

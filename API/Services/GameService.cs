@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.Interfaces;
 using API.Logic;
+using API.Models.Dtos;
 using API.Models.Entities;
-
+using static API.Utils.BitbboardUtils;
+using static API.Utils.ChessHelpers;
 namespace API.Services
 {
     public class GameService
@@ -37,11 +39,52 @@ namespace API.Services
             Game game = new()
             {
                 Status = "waiting",
-                Fen = Utils.ChessHelpers.INITIAL_FEN,
-                BottomPlayerId = playerId
+                Fen = INITIAL_FEN,
+                BottomPlayerId = playerId,
+                TopPlayer = null
             };
             await _gameRepository.AddGameAsync(game);
             await _gameRepository.SaveChangesAsync();
+            return game;
+        }
+        public GameDto GetGameDto(Game game)
+        {
+            Board board = new(game.Fen);
+            int moveCount = 0;
+            // get all legal moves for the current player
+            int[] moves = board.GenerateLegalMoves(ref moveCount);
+            IEnumerable<Move> firstMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
+            // switch the side to get the other player's moves
+            board.Side ^= 1;
+            moveCount = 0;
+            // get all legal moves for the other player
+            moves = board.GenerateLegalMoves(ref moveCount);
+            IEnumerable<Move> secondMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
+            return new GameDto
+            {
+                Id = game.Id,
+                Pieces = board.TransformToPieces(),
+                BlackMoves = board.Side == White ? firstMoves : secondMoves,
+                WhiteMoves = board.Side == White ? secondMoves : firstMoves
+            };
+        }
+        public async Task<Game> MakeMove(long playerId, Move move)
+        {
+            Game game = await GetGame(playerId);
+            if (game == null) throw new ArgumentException("Player is not in a game");
+            Board board = new(game.Fen);
+            if (board.Side == White && game.BottomPlayerId != playerId
+            || board.Side == Black && game.TopPlayerId != playerId)
+                throw new ArgumentException("It's not your turn");
+            int moveCount = 0;
+            int[] moves = board.GenerateLegalMoves(ref moveCount);
+            if (moves.Where(m => GetMoveSource(m) == move.From && GetMoveTarget(m) == move.To).Any())
+            {
+                board.MakeMove(move.From, move.To);
+                game.Fen = Fen.UpdateFen(board);
+                _gameRepository.UpdateGame(game);
+                await _gameRepository.SaveChangesAsync();
+            }
             return game;
         }
         public async Task<Game> GetGame(long playerId)

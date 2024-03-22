@@ -1,5 +1,8 @@
 
 using API.Controllers;
+using API.Interfaces;
+using API.Repository;
+using API.Services;
 using DeviceMicroservice.Data;
 using Microsoft.EntityFrameworkCore;
 using UserMicroservice.Interfaces;
@@ -23,12 +26,15 @@ namespace API.Extensions
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IGameRepository, GameRepository>();
+            services.AddScoped<GameService>();
             services.AddHttpClient();
 
             services.AddDbContext<DataContext>(opt =>
             {
                 opt.UseNpgsql(connectionString);
             });
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             return services;
         }
     }

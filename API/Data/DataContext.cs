@@ -16,6 +16,26 @@ namespace DeviceMicroservice.Data
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Game> Games { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Game>()
+                .HasOne(g => g.TopPlayer)
+                .WithMany(u => u.TopPlayerGames)
+                .HasForeignKey(g => g.TopPlayerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Game>()
+                .HasOne(g => g.BottomPlayer)
+                .WithMany(u => u.BottomPlayerGames)
+                .HasForeignKey(g => g.BottomPlayerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
+
+
 
     }
+
 }
