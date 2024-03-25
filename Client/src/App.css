@@ -1,5 +1,5 @@
 body {
-  background-image: url("/particles.jpg");
+  background-image: url('/particles.jpg');
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;

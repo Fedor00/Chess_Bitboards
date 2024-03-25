@@ -1,7 +1,13 @@
-import HomeNavbar from "../components/HomeNavbar";
+import HomeNavbar from '../components/HomeNavbar'
+import Play from '../components/Play'
 
 function Homepage() {
-  return <HomeNavbar />;
+  return (
+    <div>
+      <HomeNavbar />
+      <Play />
+    </div>
+  )
 }
 
-export default Homepage;
+export default Homepage
