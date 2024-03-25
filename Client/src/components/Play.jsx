@@ -1,25 +1,43 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Board from './Board'
+import { useAuth } from '../contexts/AuthContext'
+import { getCurrentGame, makeMoveApi } from '../services/GameApi'
+import { DEFAULT_PIECES } from '../config'
 
 function Play() {
-  const [board, setBoard] = useState([
-    [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ' '],
-    ['8', 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r', '8'],
-    ['7', 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p', '7'],
-    ['6', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', '6'],
-    ['5', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', '5'],
-    ['4', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', '4'],
-    ['3', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', '3'],
-    ['2', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', '2'],
-    ['1', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R', '1'],
-    [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ' '],
-  ])
+  const { user } = useAuth()
+  const [game, setGame] = useState({ pieces: DEFAULT_PIECES })
 
-  const annotations = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  useEffect(() => {
+    const fetchGame = async () => {
+      const data = await getCurrentGame(user)
+      console.log(data)
+      setGame((current) => ({
+        ...current,
+        ...data,
+      }))
+    }
+
+    if (user) fetchGame()
+  }, [user])
+
+  const makeMove = async (from, to) => {
+    const gameData = await makeMoveApi(user, from, to)
+    if (gameData) setGame(gameData)
+  }
+
+  const updateGamePieces = (newPieces) => {
+    setGame((current) => ({ ...current, pieces: newPieces }))
+  }
 
   return (
     <div className="h-full">
-      <Board board={board} annotations={annotations} setBoard={setBoard} />;
+      <Board
+        game={game}
+        updateGamePieces={updateGamePieces}
+        makeMove={makeMove}
+      />
+      ;
     </div>
   )
 }

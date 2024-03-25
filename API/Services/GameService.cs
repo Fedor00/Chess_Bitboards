@@ -65,7 +65,9 @@ namespace API.Services
                 Id = game.Id,
                 Pieces = board.TransformToPieces(),
                 BlackMoves = board.Side == White ? firstMoves : secondMoves,
-                WhiteMoves = board.Side == White ? secondMoves : firstMoves
+                WhiteMoves = board.Side == White ? secondMoves : firstMoves,
+                TopPlayerId = game.TopPlayerId,
+                BottomPlayerId = game.BottomPlayerId
             };
         }
         public async Task<Game> MakeMove(long playerId, Move move)
@@ -78,13 +80,19 @@ namespace API.Services
                 throw new ArgumentException("It's not your turn");
             int moveCount = 0;
             int[] moves = board.GenerateLegalMoves(ref moveCount);
-            if (moves.Where(m => GetMoveSource(m) == move.From && GetMoveTarget(m) == move.To).Any())
+            for (int i = 0; i < moveCount; i++)
             {
-                board.MakeMove(move.From, move.To);
-                game.Fen = Fen.UpdateFen(board);
-                _gameRepository.UpdateGame(game);
-                await _gameRepository.SaveChangesAsync();
+                if (GetMoveSource(moves[i]) == move.From && GetMoveTarget(moves[i]) == move.To)
+                {
+                    board.MakeMove(moves[i], AllMoves);
+                    PrintBitboard(board.Occuppancy[Both]);
+                    game.Fen = Fen.UpdateFen(board);
+                    _gameRepository.UpdateGame(game);
+                    await _gameRepository.SaveChangesAsync();
+                    break;
+                }
             }
+
             return game;
         }
         public async Task<Game> GetGame(long playerId)

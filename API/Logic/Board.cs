@@ -804,13 +804,38 @@ namespace API.Logic
         }
         public char[][] TransformToPieces()
         {
-            char[][] boardRepresentation = new char[8][];
-            for (int i = 0; i < 8; i++)
+            char[][] boardRepresentation = new char[10][];
+            for (int i = 0; i < 10; i++)
             {
-                boardRepresentation[i] = new char[8];
-                for (int j = 0; j < 8; j++)
+                boardRepresentation[i] = new char[10];
+                for (int j = 0; j < 10; j++)
                 {
-                    boardRepresentation[i][j] = 'x';
+                    if (i == 0 || i == 9)
+                    {
+                        if (j > 0 && j < 9)
+                        {
+                            boardRepresentation[i][j] = (char)('a' + j - 1);
+                        }
+                        else
+                        {
+                            boardRepresentation[i][j] = ' ';
+                        }
+                    }
+                    else if (j == 0 || j == 9)
+                    {
+                        if (i > 0 && i < 9)
+                        {
+                            boardRepresentation[i][j] = (char)('1' + 8 - i);
+                        }
+                        else
+                        {
+                            boardRepresentation[i][j] = ' ';
+                        }
+                    }
+                    else
+                    {
+                        boardRepresentation[i][j] = 'X';
+                    }
                 }
             }
             for (int pieceType = 0; pieceType < Bitboards.Length; pieceType++)
@@ -821,14 +846,20 @@ namespace API.Logic
                     ulong squareBit = 1UL << squareIndex;
                     if ((bitboard & squareBit) != 0)
                     {
-                        int row = squareIndex / 8;
-                        int col = squareIndex % 8;
+
+                        int row = (squareIndex / 8) + 1;
+                        int col = (squareIndex % 8) + 1;
+
+
+                        int piece = pieceType;
                         boardRepresentation[row][col] = PieceToChar[pieceType];
                     }
                 }
             }
+            PrintBoard(this);
             return boardRepresentation;
         }
+
         public Board Clone()
         {
             Board copy = new()

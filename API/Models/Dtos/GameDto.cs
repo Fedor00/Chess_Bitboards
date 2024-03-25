@@ -11,6 +11,8 @@ namespace API.Models.Dtos
     public class GameDto
     {
         public string Id { get; set; }
+        public long? TopPlayerId { get; set; }
+        public long? BottomPlayerId { get; set; }
         public char[][] Pieces { get; set; }
         public IEnumerable<Move> BlackMoves { get; set; }
         public IEnumerable<Move> WhiteMoves { get; set; }

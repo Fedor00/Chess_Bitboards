@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
-import { MIDNGHT_PATH } from '../config'
+import { MIDNIGHT_PATH } from '../config'
 
-function Tile({ cell, i, j, whenDragged, whenDragEnd, draggedCell }) {
+function Tile({
+  cell,
+  i,
+  j,
+  onPieceSelected,
+  onDragEnd,
+  selectedPiece,
+  isHighlighted,
+}) {
   const [isDragging, setIsDragging] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const imgRef = useRef(null)
@@ -9,12 +17,12 @@ function Tile({ cell, i, j, whenDragged, whenDragEnd, draggedCell }) {
 
   const getPath = (piece) => {
     const pieceColor = piece === piece.toLowerCase() ? 'b' : 'w'
-    return `${MIDNGHT_PATH}${pieceColor}${piece.toUpperCase()}.svg`
+    return `${MIDNIGHT_PATH}${pieceColor}${piece.toUpperCase()}.svg`
   }
 
   const handleMouseDown = (e) => {
     if (cell === 'X' || isMargin()) return
-    whenDragged(i, j)
+    onPieceSelected(i, j)
     setIsDragging(true)
     setMousePosition({ x: e.clientX, y: e.clientY })
     if (imgRef.current) {
@@ -27,8 +35,8 @@ function Tile({ cell, i, j, whenDragged, whenDragEnd, draggedCell }) {
 
   useEffect(() => {
     const handleMouseUp = (e) => {
-      if (draggedCell.piece === 'X') return
-      whenDragEnd(e.clientX, e.clientY)
+      if (selectedPiece.piece === 'X') return
+      onDragEnd(e.clientX, e.clientY)
       setIsDragging(false)
     }
 
@@ -44,32 +52,46 @@ function Tile({ cell, i, j, whenDragged, whenDragEnd, draggedCell }) {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [draggedCell, i, isDragging, j, whenDragEnd])
+  }, [selectedPiece, i, isDragging, j, onDragEnd])
 
   const isMargin = () => i === 0 || i === 9 || j === 0 || j === 9
+  const calculateColor = () => {
+    if (isMargin()) {
+      return ' text-white'
+    } else if ((i + j) % 2 === 0) {
+      return 'bg-neutral-600'
+    } else {
+      return 'bg-neutral-400'
+    }
+  }
+  const borderClass = isMargin() ? '' : 'border-1 border-blue-950'
+
+  const color = calculateColor()
 
   return (
     <div
-      className={`flex aspect-square select-none items-center justify-center ${isMargin() ? 'bg-brown-500 text-white' : (i + j) % 2 === 0 ? 'bg-neutral-600' : 'bg-neutral-400'}`}
+      className={`bg- flex  aspect-square select-none items-center justify-center  ${color} ${borderClass} `}
       onMouseDown={handleMouseDown}
     >
       {isMargin() ? (
         <span className="text-start font-bold">{cell}</span>
+      ) : cell !== 'X' ? (
+        <img
+          ref={imgRef}
+          src={getPath(cell)}
+          draggable="false"
+          alt=""
+          className={isHighlighted ? 'animate-pulse' : ''}
+        />
       ) : (
-        cell !== 'X' && (
-          <img
-            ref={imgRef}
-            src={getPath(cell)}
-            draggable="false"
-            alt=""
-            className="object-contain"
-          />
+        isHighlighted && (
+          <div className="h-[calc(100%/4)] w-[calc(100%/4)] rounded-full bg-black"></div>
         )
       )}
 
-      {isDragging && draggedCell && (
+      {isDragging && selectedPiece && (
         <img
-          src={getPath(draggedCell)}
+          src={getPath(selectedPiece)}
           alt="Dragging piece"
           className="object-contain"
           style={{
