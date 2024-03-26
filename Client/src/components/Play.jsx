@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentGame, makeMoveApi } from '../services/GameApi'
-import { DEFAULT_PIECES } from '../config'
+import { CHESS_SOUNDS, DEFAULT_PIECES } from '../config'
 import Loading from './Loading'
 import ChessBoard from './Chessboard'
 
@@ -18,7 +18,7 @@ function Play() {
         })
       })
       //also need to flip the moves
-      newGame.blackMoves = newGame.blackMoves.map((move) => {
+      newGame.moves = newGame.blackMoves.map((move) => {
         move.from = 63 - move.from
         move.to = 63 - move.to
         return move
@@ -38,11 +38,27 @@ function Play() {
   }, [user])
 
   const makeMove = async (from, to) => {
-    const gameData = await makeMoveApi(user, from, to)
-    if (gameData) updatGameState(gameData)
+    const moveData = await makeMoveApi(user, from, to)
+    console.log(moveData)
+    if (moveData) updatGameState(moveData.gameDto)
     else setGame(DEFAULT_PIECES)
+    playSound(moveData)
   }
+  const playSound = (moveData) => {
+    let audio
+    if (moveData.isCheckmate) audio = new Audio(`${CHESS_SOUNDS}/checkmate.mp3`)
+    else if (moveData.isCheck) audio = new Audio(`${CHESS_SOUNDS}/check.mp3`)
+    else if (moveData.isDraw || moveData.isStalemate)
+      audio = new Audio(`${CHESS_SOUNDS}/draw.mp3`)
+    else if (moveData.isCapture)
+      audio = new Audio(`${CHESS_SOUNDS}/capture.mp3`)
+    else if (moveData.isCastle) audio = new Audio(`${CHESS_SOUNDS}/castle.mp3`)
+    else if (moveData.isPromotion)
+      audio = new Audio(`${CHESS_SOUNDS}/promotion.mp3`)
+    else audio = new Audio(`${CHESS_SOUNDS}/move.mp3`)
 
+    audio.play()
+  }
   const updateGamePieces = (newPieces) => {
     setGame((current) => ({ ...current, pieces: newPieces }))
   }

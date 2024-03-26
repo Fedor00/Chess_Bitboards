@@ -30,7 +30,6 @@ namespace API.Logic
         {
             Fen.InitializeBoard(this, fen);
             InitializePiecePositions();
-            PrintPiecePositions();
         }
         public Board() { }
 
@@ -117,9 +116,9 @@ namespace API.Logic
 
                 Castle &= CastlingRights[source] & CastlingRights[target];
                 UpdateOccupancy();
-                //Console.WriteLine(AsciiPiece[pieceCaptured]);
-                //PrintPiecePositions();
-                //PrintBitboard(Occuppancy[Both]);
+                HalfMoveClock++;
+                if (Side == Black) FullMoveNumber++;
+                if (capture || piece == P || piece == p) HalfMoveClock = 0;
                 Side ^= 1;
             }
             else
@@ -130,6 +129,22 @@ namespace API.Logic
             }
             return 1;
 
+        }
+        public bool IsInCheck()
+        {
+            int kingSquare = GetLSBIndex(Bitboards[Side == White ? K : k]);
+            return IsSquareAttacked(kingSquare, Side == White ? Black : White);
+        }
+        public bool IsDraw()
+        {
+            if (HalfMoveClock >= 100)
+                return true;
+            if (Bitboards[P] == 0 && Bitboards[p] == 0 && Bitboards[R] == 0 && Bitboards[r] == 0 && Bitboards[Q] == 0 && Bitboards[q] == 0)
+                return true;
+            if (Bitboards[P] == 0 && Bitboards[p] == 0 && Bitboards[R] == 0 && Bitboards[r] == 0 && Bitboards[Q] == 0 && Bitboards[q] == 0)
+                return true;
+
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -329,6 +344,7 @@ namespace API.Logic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int[] HandleKingNotInCheckMoves(ref int moveCount, int kingSquare)
         {
+
             int[] moves = new int[218];
             int source, target;
             int from = Side == White ? P : p;

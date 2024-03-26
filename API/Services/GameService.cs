@@ -54,12 +54,13 @@ namespace API.Services
             // get all legal moves for the current player
             int[] moves = board.GenerateLegalMoves(ref moveCount);
             IEnumerable<Move> firstMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
-            // switch the side to get the other player's moves
+
+            //reset enpassant since generating moves for the other player 
             board.Side ^= 1;
+            board.Enpassant = None;
             moveCount = 0;
             // get all legal moves for the other player
             moves = board.GenerateLegalMoves(ref moveCount);
-
             IEnumerable<Move> secondMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
             return new GameDto
             {
@@ -68,10 +69,13 @@ namespace API.Services
                 BlackMoves = board.Side == White ? firstMoves : secondMoves,
                 WhiteMoves = board.Side == White ? secondMoves : firstMoves,
                 TopPlayerId = game.TopPlayerId,
-                BottomPlayerId = game.BottomPlayerId
+                BottomPlayerId = game.BottomPlayerId,
+                Status = game.Status,
+                HalfMoveClock = board.HalfMoveClock,
+                FullMoveNumber = board.FullMoveNumber
             };
         }
-        public async Task<Game> MakeMove(long playerId, Move move)
+        public async Task<MoveDto> MakeMove(long playerId, Move move)
         {
             Game game = await GetGame(playerId);
             if (game == null) throw new ArgumentException("Player is not in a game");
@@ -82,23 +86,50 @@ namespace API.Services
                 throw new ArgumentException("It's not your turn");
             int moveCount = 0;
             int[] moves = board.GenerateLegalMoves(ref moveCount);
+            int moveMade = 0;
             for (int i = 0; i < moveCount; i++)
             {
                 if (GetMoveSource(moves[i]) == move.From && GetMoveTarget(moves[i]) == move.To)
                 {
+                    moveMade = moves[i];
                     board.MakeMove(moves[i], AllMoves);
-                    PrintBitboard(board.Occuppancy[Both]);
                     game.Fen = Fen.UpdateFen(board);
-                    _gameRepository.UpdateGame(game);
-                    await _gameRepository.SaveChangesAsync();
+
                     break;
                 }
             }
-            return game;
+            GameDto gameDto = GetGameDto(game);
+            bool check = board.IsInCheck();
+            bool outOfMoves = board.Side == White ? gameDto.WhiteMoves.Count() == 0 : gameDto.BlackMoves.Count() == 0;
+            bool checkMate = check && outOfMoves;
+            bool stalement = !check && outOfMoves;
+            bool draw = board.IsDraw();
+            if (draw) game.Status = "draw";
+            if (checkMate) game.Status = "checkmate";
+            if (stalement) game.Status = "stalemate";
+            _gameRepository.UpdateGame(game);
+            await _gameRepository.SaveChangesAsync();
+            return CreateMoveDto(gameDto, moveMade, check, checkMate, stalement, draw);
+
         }
         private Move ReverseMove(Move move)
         {
             return new Move { From = h1 - move.From, To = h1 - move.To };
+        }
+        private MoveDto CreateMoveDto(GameDto gameDto, int move, bool check, bool checkMate, bool stalement, bool draw)
+        {
+            return new MoveDto
+            {
+                IsCapture = IsMoveCapture(move),
+                IsCheck = check,
+                IsCheckmate = checkMate,
+                IsStalemate = stalement,
+                IsDraw = draw,
+                IsPromotion = GetMovePromoted(move) != 0,
+                IsCastling = IsMoveCastle(move),
+                GameDto = gameDto
+            };
+
         }
         public async Task<Game> GetGame(long playerId)
         {

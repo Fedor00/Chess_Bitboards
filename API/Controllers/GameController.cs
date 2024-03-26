@@ -26,18 +26,16 @@ namespace API.Controllers
         [HttpPut("make-move")]
         public async Task<ActionResult<GameDto>> MakeMove(Move move)
         {
-            Console.WriteLine("Move: " + move.From + "move.To" + move.To);
             long userId = GetUserId();
-            Game game = await _gameService.MakeMove(userId, move);
-            GameDto gameDto = _gameService.GetGameDto(game);
-            return Ok(gameDto);
+            MoveDto moveDto = await _gameService.MakeMove(userId, move);
+
+            return Ok(moveDto);
         }
         [HttpGet]
         public async Task<ActionResult<GameDto>> GetGame()
         {
             long userId = GetUserId();
             Game game = await _gameService.GetGame(userId);
-            Console.WriteLine("Game: " + game.Id + "TopPlayerId: " + game.TopPlayerId + "BottomPlayerId: " + game.BottomPlayerId + "Fen: " + game.Fen + "Status: " + game.Status);
             GameDto gameDto = _gameService.GetGameDto(game);
             return Ok(gameDto);
         }
@@ -45,7 +43,6 @@ namespace API.Controllers
         public async Task<ActionResult<GameDto>> CreateOrJoinGame()
         {
             long userId = GetUserId();
-            Console.WriteLine("User id: " + userId);
             Game game = await _gameService.CreateOrJoinGame(userId);
             GameDto gameDto = _gameService.GetGameDto(game);
             return Ok(gameDto);

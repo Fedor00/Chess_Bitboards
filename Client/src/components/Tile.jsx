@@ -18,7 +18,7 @@ function Tile({
 
   const getPath = (piece) => {
     const pieceColor = piece === piece.toLowerCase() ? 'b' : 'w'
-    return `${MIDNIGHT_PATH}${pieceColor}${piece.toUpperCase()}.svg`
+    return `${MIDNIGHT_PATH}/${pieceColor}${piece.toUpperCase()}.svg`
   }
 
   const handleMouseDown = (e) => {
