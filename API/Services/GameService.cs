@@ -47,7 +47,7 @@ namespace API.Services
             await _gameRepository.SaveChangesAsync();
             return game;
         }
-        public GameDto GetGameDto(Game game)
+        public GameDto GetGameDto(Game game, bool perspective)
         {
             Board board = new(game.Fen);
             int moveCount = 0;
@@ -60,10 +60,12 @@ namespace API.Services
             // get all legal moves for the other player
             moves = board.GenerateLegalMoves(ref moveCount);
             IEnumerable<Move> secondMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
+            board.Side ^= 1;
+
             return new GameDto
             {
                 Id = game.Id,
-                Pieces = board.TransformToPieces(),
+                Pieces = board.TransformToPieces(perspective),
                 BlackMoves = board.Side == White ? firstMoves : secondMoves,
                 WhiteMoves = board.Side == White ? secondMoves : firstMoves,
                 TopPlayerId = game.TopPlayerId,
@@ -94,6 +96,10 @@ namespace API.Services
             }
 
             return game;
+        }
+        public bool GetPerspective(long playerId, Game game)
+        {
+            return game.BottomPlayerId == playerId;
         }
         public async Task<Game> GetGame(long playerId)
         {

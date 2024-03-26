@@ -802,7 +802,7 @@ namespace API.Logic
             }
             Occuppancy[Both] = Occuppancy[White] | Occuppancy[Black];
         }
-        public char[][] TransformToPieces()
+        public char[][] TransformToPieces(bool perspective)
         {
             char[][] boardRepresentation = new char[10][];
             for (int i = 0; i < 10; i++)
@@ -846,11 +846,8 @@ namespace API.Logic
                     ulong squareBit = 1UL << squareIndex;
                     if ((bitboard & squareBit) != 0)
                     {
-
-                        int row = (squareIndex / 8) + 1;
-                        int col = (squareIndex % 8) + 1;
-
-
+                        int row = perspective ? (squareIndex / 8) + 1 : 8 - (squareIndex / 8);
+                        int col = perspective ? (squareIndex % 8) + 1 : 8 - (squareIndex % 8);
                         int piece = pieceType;
                         boardRepresentation[row][col] = PieceToChar[pieceType];
                     }
