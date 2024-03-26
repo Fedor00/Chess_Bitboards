@@ -64,13 +64,13 @@ function Tile({
       return 'bg-neutral-400'
     }
   }
-  const borderClass = isMargin() ? '' : 'border-1 border-blue-950'
+  const borderClass = isMargin() ? '' : 'border-1 border-red-950 '
 
   const color = calculateColor()
 
   return (
     <div
-      className={`bg- flex  aspect-square select-none items-center justify-center  ${color} ${borderClass} `}
+      className={` flex  aspect-square select-none items-center justify-center  ${color} ${borderClass} `}
       onMouseDown={handleMouseDown}
     >
       {isMargin() ? (
@@ -85,7 +85,7 @@ function Tile({
         />
       ) : (
         isHighlighted && (
-          <div className="h-[calc(100%/4)] w-[calc(100%/4)] rounded-full bg-black"></div>
+          <div className=" h-[calc(100%/4)] w-[calc(100%/4)] rounded-full bg-black"></div>
         )
       )}
 
