@@ -10,3 +10,8 @@ export function getChessBoardIndex(i, j) {
   const number = i * 8 + j
   return number
 }
+export const isOutOfBounds = (i, j) => {
+  return i < 0 || i > 7 || j < 0 || j > 7
+}
+export const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+export const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']

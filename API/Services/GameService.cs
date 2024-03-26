@@ -75,6 +75,7 @@ namespace API.Services
         {
             Game game = await GetGame(playerId);
             if (game == null) throw new ArgumentException("Player is not in a game");
+            if (playerId == game.TopPlayerId) move = ReverseMove(move);
             Board board = new(game.Fen);
             if (board.Side == White && game.BottomPlayerId != playerId
             || board.Side == Black && game.TopPlayerId != playerId)
@@ -93,8 +94,11 @@ namespace API.Services
                     break;
                 }
             }
-
             return game;
+        }
+        private Move ReverseMove(Move move)
+        {
+            return new Move { From = h1 - move.From, To = h1 - move.To };
         }
         public async Task<Game> GetGame(long playerId)
         {

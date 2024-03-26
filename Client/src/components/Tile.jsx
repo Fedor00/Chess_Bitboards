@@ -9,6 +9,7 @@ function Tile({
   onDragEnd,
   selectedPiece,
   isHighlighted,
+  notation,
 }) {
   const [isDragging, setIsDragging] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -21,7 +22,7 @@ function Tile({
   }
 
   const handleMouseDown = (e) => {
-    if (cell === 'X' || isMargin()) return
+    if (cell === 'X') return
     onPieceSelected(i, j)
     setIsDragging(true)
     setMousePosition({ x: e.clientX, y: e.clientY })
@@ -54,28 +55,33 @@ function Tile({
     }
   }, [selectedPiece, i, isDragging, j, onDragEnd])
 
-  const isMargin = () => i === 0 || i === 9 || j === 0 || j === 9
   const calculateColor = () => {
-    if (isMargin()) {
-      return ' text-white'
-    } else if ((i + j) % 2 === 0) {
+    if ((i + j) % 2 === 0) {
       return 'bg-neutral-600'
     } else {
       return 'bg-neutral-400'
     }
   }
-  const borderClass = isMargin() ? '' : 'border-1 border-red-950 '
-
   const color = calculateColor()
-
   return (
     <div
-      className={` flex  aspect-square select-none items-center justify-center  ${color} ${borderClass} `}
+      className={`relative flex aspect-square select-none items-center justify-center ${color} border-1 border-red-950 `}
       onMouseDown={handleMouseDown}
+      style={{ zIndex: isDragging ? 1 : 'auto' }}
     >
-      {isMargin() ? (
-        <span className="text-start font-bold">{cell}</span>
-      ) : cell !== 'X' ? (
+      {j === 0 && (
+        <div className="absolute left-0 top-0 flex h-[20%] w-[20%] items-center justify-center text-xs md:text-sm lg:text-lg">
+          {notation.col}
+        </div>
+      )}
+
+      {i === 7 && (
+        <div className="absolute bottom-0 right-0 flex h-[30%] w-[20%] items-center justify-center text-xs md:text-sm lg:text-lg">
+          {notation.row}
+        </div>
+      )}
+
+      {cell !== 'X' ? (
         <img
           ref={imgRef}
           src={getPath(cell)}

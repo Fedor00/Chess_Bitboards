@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import Board from './Board'
+
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentGame, makeMoveApi } from '../services/GameApi'
 import { DEFAULT_PIECES } from '../config'
 import Loading from './Loading'
+import ChessBoard from './Chessboard'
 
 function Play() {
   const { user } = useAuth()
@@ -13,8 +14,7 @@ function Play() {
     if (user?.id !== newGame.bottomPlayerId) {
       newGame.pieces = newGame.pieces.map((row, rowIndex) => {
         return row.map((_, cellIndex) => {
-          // we use 9 because the board is 10x10 in order to include  border annotations
-          return newGame.pieces[9 - rowIndex][9 - cellIndex]
+          return newGame.pieces[7 - rowIndex][7 - cellIndex]
         })
       })
       //also need to flip the moves
@@ -24,6 +24,7 @@ function Play() {
         return move
       })
     }
+    console.log(newGame)
     setGame(newGame)
   }
   useEffect(() => {
@@ -47,9 +48,9 @@ function Play() {
   }
 
   return (
-    <div className="h-full">
+    <div>
       {game ? (
-        <Board
+        <ChessBoard
           game={game}
           updateGamePieces={updateGamePieces}
           makeMove={makeMove}

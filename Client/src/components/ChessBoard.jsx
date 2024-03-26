@@ -1,7 +1,11 @@
 import React, { useRef, useState } from 'react'
 import Tile from './Tile'
 import { useAuth } from '../contexts/AuthContext'
-import { getChessBoardIndex } from '../services/Utils'
+import {
+  getChessBoardIndex,
+  getCoordinates,
+  isOutOfBounds,
+} from '../services/Utils'
 
 function ChessBoard({ game, updateGamePieces, makeMove }) {
   const chessBoardRef = useRef(null)
@@ -17,15 +21,14 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
 
   const highlightMoves = (rowIndex, colIndex) => {
     const movesHighlight = Array.from({ length: 8 }, () => Array(8).fill(false))
-    if (rowIndex < 1 || rowIndex > 8 || colIndex < 1 || colIndex > 8) return
-    const fromIndex = getChessBoardIndex(rowIndex - 1, colIndex - 1)
+    if (isOutOfBounds(rowIndex, colIndex)) return
+    const fromIndex = getChessBoardIndex(rowIndex, colIndex)
     const validMoves = game[`${isUserTurn}Moves`]
 
     validMoves.forEach((move) => {
       if (move.from === fromIndex) {
-        const row = Math.floor(move.to / 8)
-        const col = move.to % 8
-        movesHighlight[row][col] = true
+        const { i, j } = getCoordinates(move.to)
+        movesHighlight[i][j] = true
       }
     })
 
@@ -63,16 +66,11 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
     const tileWidth = width / game.pieces[0].length
     const newRowIndex = Math.floor((mouseY - top) / tileWidth)
     const newColIndex = Math.floor((mouseX - left) / tileWidth)
-    const fromIndex = getChessBoardIndex(
-      selectedPiece.i - 1,
-      selectedPiece.j - 1,
-    )
-    const toIndex = getChessBoardIndex(newRowIndex - 1, newColIndex - 1)
+    const fromIndex = getChessBoardIndex(selectedPiece.i, selectedPiece.j)
+    const toIndex = getChessBoardIndex(newRowIndex, newColIndex)
     if (
-      newRowIndex >= 1 &&
-      newRowIndex < game.pieces.length - 1 &&
-      newColIndex >= 1 &&
-      newColIndex < game.pieces[0].length - 1
+      !isOutOfBounds(newRowIndex, newColIndex) &&
+      highlightedMoves[newRowIndex]?.[newColIndex]
     ) {
       try {
         if (fromIndex !== toIndex) {
@@ -86,13 +84,18 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
       restoreSelectedPiece()
     }
   }
-
+  const getNotationForTile = (i, j) => {
+    const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
+    const col = isUserTurn === 'white' ? colNotation[i] : colNotation[7 - i]
+    const row = isUserTurn === 'white' ? rowNotation[j] : rowNotation[7 - j]
+    return { col, row }
+  }
   return (
-    <div className="max-w-screen flex h-screen max-h-[93vh] w-full items-center justify-center">
+    <div className="max-w-screen flex max-h-full min-h-[92vh] w-full items-center justify-center ">
       <div
-        className="grid grid-cols-10"
+        className="grid  w-[calc(100vmin-3rem)]  grid-cols-8"
         ref={chessBoardRef}
-        style={{ width: 'calc(100vmin )', height: 'calc(100vmin - 6rem)' }}
       >
         {game.pieces.map((row, rowIndex) => (
           <React.Fragment key={rowIndex}>
@@ -108,7 +111,8 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
                   onPieceSelected={() => onPieceSelected(rowIndex, colIndex)}
                   onDragEnd={onDragEnd}
                   selectedPiece={selectedPiece.piece}
-                  isHighlighted={highlightedMoves[rowIndex - 1]?.[colIndex - 1]}
+                  isHighlighted={highlightedMoves[rowIndex]?.[colIndex]}
+                  notation={getNotationForTile(rowIndex, colIndex)}
                 />
               </div>
             ))}
