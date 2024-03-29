@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using API.Hubs;
 using API.Interfaces;
 using API.Logic;
 using API.Models.Dtos;
 using API.Models.Entities;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using static API.Utils.BitbboardUtils;
 using static API.Utils.ChessHelpers;
 namespace API.Services
@@ -13,35 +16,43 @@ namespace API.Services
     public class GameService
     {
         private readonly IGameRepository _gameRepository;
+        private readonly IHubContext<ChessHub> _hubContext;
 
-        public GameService(IGameRepository gameRepository)
+        public GameService(IGameRepository gameRepository, IHubContext<ChessHub> hubContext)
         {
             _gameRepository = gameRepository;
+            _hubContext = hubContext;
         }
-        public async Task<Game> CreateOrJoinGame(long playerId)
+        public async Task<GameDto> MatchGame(long playerId, CreateGameDto createGameDto)
         {
-            var playingGame = await GetGame(playerId);
-            // if already playing a game or created one and waiting , return that game
-            if (playingGame != null) return playingGame;
-            var game = await _gameRepository.GetWaitingGame();
-            // if there is no game to join create one
-            if (game == null) return await CreateGame(playerId);
-            // join the waiting game
+            var existingGame = await _gameRepository.GetGameForPlayerAsync(playerId);
+            if (existingGame != null)
+            {
+                throw new InvalidOperationException("Player is already in a game.");
+            }
+            var game = await _gameRepository.GetMatchingGame(createGameDto.IsPrivate);
+            if (game == null)
+            {
+                return GetGameDto(await CreateGame(playerId, createGameDto));
+            }
             game.TopPlayerId = playerId;
-            game.Status = "playing";
+            game.Status = Playing;
+            game.StartTime = DateTime.UtcNow;
             _gameRepository.UpdateGame(game);
+            GameDto gameDto = GetGameDto(game);
+            await _hubContext.Clients.User(game.BottomPlayerId.ToString()).SendAsync("GameStarted", gameDto);
             await _gameRepository.SaveChangesAsync();
-            return game;
+            return gameDto;
         }
 
-        private async Task<Game> CreateGame(long playerId)
+        public async Task<Game> CreateGame(long playerId, CreateGameDto createGameDto)
         {
-            Game game = new()
+            var game = new Game
             {
-                Status = "waiting",
-                Fen = INITIAL_FEN,
                 BottomPlayerId = playerId,
-                TopPlayer = null
+                Status = Waiting,
+                Fen = INITIAL_FEN,
+                IsPrivate = createGameDto.IsPrivate,
             };
             await _gameRepository.AddGameAsync(game);
             await _gameRepository.SaveChangesAsync();
@@ -72,45 +83,81 @@ namespace API.Services
                 BottomPlayerId = game.BottomPlayerId,
                 Status = game.Status,
                 HalfMoveClock = board.HalfMoveClock,
-                FullMoveNumber = board.FullMoveNumber
+                FullMoveNumber = board.FullMoveNumber,
+
             };
         }
         public async Task<MoveDto> MakeMove(long playerId, Move move)
         {
-            Game game = await GetGame(playerId);
+            var game = await GetGame(playerId);
             if (game == null) throw new ArgumentException("Player is not in a game");
+            if (game.Status != Playing) throw new InvalidOperationException("Game is not in progress");
             if (playerId == game.TopPlayerId) move = ReverseMove(move);
-            Board board = new(game.Fen);
+
+            var board = new Board(game.Fen);
             if (board.Side == White && game.BottomPlayerId != playerId
             || board.Side == Black && game.TopPlayerId != playerId)
                 throw new ArgumentException("It's not your turn");
-            int moveCount = 0;
-            int[] moves = board.GenerateLegalMoves(ref moveCount);
-            int moveMade = 0;
-            for (int i = 0; i < moveCount; i++)
+            var moveCount = 0;
+            var moves = board.GenerateLegalMoves(ref moveCount);
+            var moveMade = 0;
+
+            for (var i = 0; i < moveCount; i++)
             {
                 if (GetMoveSource(moves[i]) == move.From && GetMoveTarget(moves[i]) == move.To)
                 {
                     moveMade = moves[i];
                     board.MakeMove(moves[i], AllMoves);
                     game.Fen = Fen.UpdateFen(board);
-
                     break;
                 }
             }
-            GameDto gameDto = GetGameDto(game);
-            bool check = board.IsInCheck();
-            bool outOfMoves = board.Side == White ? gameDto.WhiteMoves.Count() == 0 : gameDto.BlackMoves.Count() == 0;
-            bool checkMate = check && outOfMoves;
-            bool stalement = !check && outOfMoves;
-            bool draw = board.IsDraw();
-            if (draw) game.Status = "draw";
-            if (checkMate) game.Status = "checkmate";
-            if (stalement) game.Status = "stalemate";
+
+            var gameDto = GetGameDto(game);
+            var check = board.IsInCheck();
+            var outOfMoves = board.Side == White ? gameDto.WhiteMoves.Count() == 0 : gameDto.BlackMoves.Count() == 0;
+            var checkMate = check && outOfMoves;
+            var stalemate = !check && outOfMoves;
+            var draw = board.IsDraw();
+
+            if (draw) game.Status = Draw;
+            if (checkMate) game.Status = board.Side == White ? BlackWin : WhiteWin;
+            if (stalemate) game.Status = Stalemate;
+
             _gameRepository.UpdateGame(game);
             await _gameRepository.SaveChangesAsync();
-            return CreateMoveDto(gameDto, moveMade, check, checkMate, stalement, draw);
+            MoveDto moveDto = CreateMoveDto(gameDto, moveMade, check, checkMate, stalemate, draw);
+            await _hubContext.Clients.User(game.BottomPlayerId.ToString()).SendAsync("MoveMade", moveDto);
+            await _hubContext.Clients.User(game.TopPlayerId.ToString()).SendAsync("MoveMade", moveDto);
+            return moveDto;
 
+        }
+
+        public async Task<Game> CreatePrivateGame(long playerId, CreateGameDto createGameDto)
+        {
+            var playingGame = await GetGame(playerId);
+            if (playingGame != null) return playingGame;
+            return await CreateGame(playerId, createGameDto);
+        }
+        public async Task<GameDto> JoinPrivateGame(string gameId, long playerId)
+        {
+            var game = await _gameRepository.GetGameAsync(gameId);
+            if (game == null)
+            {
+                throw new ArgumentException("Game not found.");
+            }
+            if (game.Status != Waiting || game.IsPrivate == false)
+            {
+                throw new InvalidOperationException("Game is not joinable.");
+            }
+            game.TopPlayerId = playerId;
+            game.Status = Playing;
+            game.StartTime = DateTime.UtcNow;
+            _gameRepository.UpdateGame(game);
+            GameDto gameDto = GetGameDto(game);
+            await _hubContext.Clients.User(game.BottomPlayerId.ToString()).SendAsync("GameStarted", gameDto);
+            await _gameRepository.SaveChangesAsync();
+            return gameDto;
         }
         private Move ReverseMove(Move move)
         {
@@ -133,7 +180,13 @@ namespace API.Services
         }
         public async Task<Game> GetGame(long playerId)
         {
-            return await _gameRepository.GetGameForPlayerAsync(playerId);
+            var game = await _gameRepository.GetGameForPlayerAsync(playerId);
+            return game;
+        }
+        public async Task DeleteGame(string gameId)
+        {
+            await _gameRepository.DeleteGame(gameId);
+            await _gameRepository.SaveChangesAsync();
         }
     }
 }

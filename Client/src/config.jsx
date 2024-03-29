@@ -2,6 +2,7 @@ export const MIDNIGHT_PATH = './images/midnight'
 export const CHESS_SOUNDS = './chess-sound-effects'
 export const ACCOUNT_API_URL = 'http://localhost:5195/api/account'
 export const GAME_API_URL = 'http://localhost:5280/api/game'
+export const CHESS_HUB_URL = 'http://localhost:5280/chess-hub'
 
 export const DEFAULT_PIECES = [
   [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ' '],

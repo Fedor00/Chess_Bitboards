@@ -19,7 +19,8 @@ namespace API.Models.Entities
         public string Fen { get; set; }
         public string Status { get; set; }
         public DateTime StartTime { get; set; }
-        public DateTime Duration { get; set; }
-        public int IncrementSeconds { get; set; }
+        public bool IsPrivate { get; set; }
+
+
     }
 }

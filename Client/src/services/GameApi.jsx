@@ -33,4 +33,65 @@ const makeMoveApi = async (user, from, to) => {
     throw new Error(error?.response?.data)
   }
 }
-export { getCurrentGame, makeMoveApi }
+const matchGameApi = async (user, isPrivate) => {
+  try {
+    const resp = await axios.post(
+      `${GAME_API_URL}/match-game`,
+      { isPrivate },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+      },
+    )
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
+const createPrivateGame = async (user, isPrivate) => {
+  try {
+    const resp = await axios.post(
+      `${GAME_API_URL}/create-private-game`,
+      { isPrivate },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+      },
+    )
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
+const joinPrivateGame = async (user, gameId) => {
+  try {
+    const resp = await axios.put(
+      `${GAME_API_URL}/join-private-game`,
+      { gameId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+      },
+    )
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
+
+export {
+  getCurrentGame,
+  makeMoveApi,
+  matchGameApi,
+  createPrivateGame,
+  joinPrivateGame,
+}

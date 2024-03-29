@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class ChangeStartTimeToDateTime : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,8 +34,7 @@ namespace API.Migrations
                     Fen = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Duration = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IncrementSeconds = table.Column<int>(type: "integer", nullable: false)
+                    IsPrivate = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {

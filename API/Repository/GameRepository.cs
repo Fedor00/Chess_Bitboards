@@ -45,9 +45,16 @@ namespace API.Repository
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public Task<Game> GetWaitingGame()
+        public Task<Game> GetMatchingGame(bool isPrivate)
         {
-            return _context.Games.Where(game => game.Status == "waiting").FirstOrDefaultAsync();
+            return _context.Games.Where(game => game.Status == "waiting" && isPrivate == game.IsPrivate).FirstOrDefaultAsync();
+        }
+
+        public async Task DeleteGame(string gameId)
+        {
+            var game = await _context.Games.FindAsync(gameId);
+            if (game != null)
+                _context.Games.Remove(game);
         }
     }
 }

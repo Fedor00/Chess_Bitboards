@@ -11,8 +11,9 @@ namespace API.Interfaces
     {
         Task<Game> GetGameAsync(string id);
         Task<Game> GetGameForPlayerAsync(long id);
-        Task<Game> GetWaitingGame();
+        Task<Game> GetMatchingGame(bool isPrivate);
         void UpdateGame(Game game);
+        Task DeleteGame(string gameId);
         Task AddGameAsync(Game game);
         Task<bool> SaveChangesAsync();
     }

@@ -30,14 +30,11 @@ namespace API.Migrations
                     b.Property<long?>("BottomPlayerId")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime>("Duration")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Fen")
                         .HasColumnType("text");
 
-                    b.Property<int>("IncrementSeconds")
-                        .HasColumnType("integer");
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");

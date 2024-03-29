@@ -4,6 +4,7 @@ using API.Interfaces;
 using API.Repository;
 using API.Services;
 using DeviceMicroservice.Data;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using UserMicroservice.Interfaces;
 using UserMicroservice.Repositories;
@@ -29,12 +30,13 @@ namespace API.Extensions
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<GameService>();
             services.AddHttpClient();
-
+            services.AddSignalR();
             services.AddDbContext<DataContext>(opt =>
             {
                 opt.UseNpgsql(connectionString);
             });
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
             return services;
         }
     }

@@ -77,6 +77,14 @@ namespace API.Utils
             { q, 'q' },
             { k, 'k' },
         };
+        public static readonly string Playing = "playing";
+        public static readonly string Waiting = "waiting";
+        public static readonly string Draw = "draw";
+        public static readonly string Stalemate = "stalemate";
+        public static readonly string WhiteWin = "white-win";
+        public static readonly string BlackWin = "black-win";
+
+
 
     }
 

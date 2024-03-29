@@ -10,6 +10,7 @@ function Tile({
   selectedPiece,
   isHighlighted,
   notation,
+  chessBoardRef,
 }) {
   const [isDragging, setIsDragging] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -42,7 +43,12 @@ function Tile({
     }
 
     const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+      const chessBoard = chessBoardRef.current
+      const rect = chessBoard.getBoundingClientRect()
+      const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+      const clampedX = clamp(e.clientX, rect.left, rect.right)
+      const clampedY = clamp(e.clientY, rect.top, rect.bottom)
+      setMousePosition({ x: clampedX, y: clampedY })
     }
 
     if (isDragging) {
@@ -53,7 +59,7 @@ function Tile({
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [selectedPiece, i, isDragging, j, onDragEnd])
+  }, [selectedPiece, i, isDragging, j, onDragEnd, chessBoardRef])
 
   const calculateColor = () => {
     if ((i + j) % 2 === 0) {
@@ -65,7 +71,7 @@ function Tile({
   const color = calculateColor()
   return (
     <div
-      className={`relative flex aspect-square select-none items-center justify-center ${color} border-1 border-red-950 `}
+      className={`relative flex aspect-square select-none items-center justify-center ${color}  `}
       onMouseDown={handleMouseDown}
       style={{ zIndex: isDragging ? 1 : 'auto' }}
     >

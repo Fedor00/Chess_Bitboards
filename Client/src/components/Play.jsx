@@ -1,30 +1,48 @@
 import { useEffect, useState } from 'react'
 
 import { useAuth } from '../contexts/AuthContext'
-import { getCurrentGame, makeMoveApi } from '../services/GameApi'
-import { CHESS_SOUNDS, DEFAULT_PIECES } from '../config'
-import Loading from './Loading'
+import {
+  createPrivateGame,
+  getCurrentGame,
+  joinPrivateGame,
+  makeMoveApi,
+  matchGameApi,
+} from '../services/GameApi'
+
 import ChessBoard from './Chessboard'
+import { flipMoves, flipPieces } from '../services/Utils'
+import { getChessAudio, playAudio } from '../services/AudioEffects'
+import { CHESS_SOUNDS, DEFAULT_PIECES } from '../config'
+import ChessPlayOptions from './ChessPlayOptions'
+import PlayerName from './PlayerName'
+import ShowTextModal from './ShowTextModal'
+import Loading from './Loading'
+import { useChessSignal } from '../contexts/SignalRContext'
 
 function Play() {
   const { user } = useAuth()
   const [game, setGame] = useState()
-  const updatGameState = (newGame) => {
-    // If the user is not the white player, we need to flip the board
-    if (user?.id !== newGame.bottomPlayerId) {
-      newGame.pieces = newGame.pieces.map((row, rowIndex) => {
-        return row.map((_, cellIndex) => {
-          return newGame.pieces[7 - rowIndex][7 - cellIndex]
-        })
+  const [showModal, setShowModal] = useState(false)
+  const { connection } = useChessSignal()
+  useEffect(() => {
+    if (connection) {
+      connection.on('MoveMade', (moveData) => {
+        updatGameState(moveData.gameDto)
       })
-      //also need to flip the moves
-      newGame.moves = newGame.blackMoves.map((move) => {
-        move.from = 63 - move.from
-        move.to = 63 - move.to
-        return move
+      connection.on('GameStarted', (gameData) => {
+        updatGameState(gameData)
+        playAudio(new Audio(`${CHESS_SOUNDS}/notify.mp3`))
       })
     }
-    console.log(newGame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection])
+
+  const updatGameState = (newGame) => {
+    if (user?.id !== newGame.bottomPlayerId) {
+      newGame.pieces = flipPieces(newGame.pieces)
+      newGame.moves = flipMoves(newGame.blackMoves)
+    }
+
     setGame(newGame)
   }
   useEffect(() => {
@@ -39,44 +57,70 @@ function Play() {
 
   const makeMove = async (from, to) => {
     const moveData = await makeMoveApi(user, from, to)
-    console.log(moveData)
-    if (moveData) updatGameState(moveData.gameDto)
-    else setGame(DEFAULT_PIECES)
     playSound(moveData)
   }
   const playSound = (moveData) => {
-    let audio
-    if (moveData.isCheckmate) audio = new Audio(`${CHESS_SOUNDS}/checkmate.mp3`)
-    else if (moveData.isCheck) audio = new Audio(`${CHESS_SOUNDS}/check.mp3`)
-    else if (moveData.isDraw || moveData.isStalemate)
-      audio = new Audio(`${CHESS_SOUNDS}/draw.mp3`)
-    else if (moveData.isCapture)
-      audio = new Audio(`${CHESS_SOUNDS}/capture.mp3`)
-    else if (moveData.isCastle) audio = new Audio(`${CHESS_SOUNDS}/castle.mp3`)
-    else if (moveData.isPromotion)
-      audio = new Audio(`${CHESS_SOUNDS}/promotion.mp3`)
-    else audio = new Audio(`${CHESS_SOUNDS}/move.mp3`)
-
-    audio.play()
+    if (moveData) {
+      const audio = getChessAudio(moveData)
+      playAudio(audio)
+    }
   }
   const updateGamePieces = (newPieces) => {
     setGame((current) => ({ ...current, pieces: newPieces }))
   }
-
+  const handlePlayAi = async () => {
+    //TODO: Implement playing against AI
+  }
+  const handleCreatePrivate = async () => {
+    const data = await createPrivateGame(user, true)
+    if (data) {
+      setShowModal(true)
+      updatGameState(data)
+    }
+  }
+  const handleJoinPrivate = async (gameId) => {
+    const data = await joinPrivateGame(user, gameId)
+    if (data) updatGameState(data)
+  }
+  const handlePlayRandom = async () => {
+    const data = await matchGameApi(user, false)
+    if (data) updatGameState(data)
+  }
   return (
-    <div>
+    <>
       {game ? (
-        <ChessBoard
-          game={game}
-          updateGamePieces={updateGamePieces}
-          makeMove={makeMove}
-        />
-      ) : (
-        <div className="flex h-screen content-center justify-center">
-          <Loading />
+        <div>
+          <div className="flex flex-row content-center justify-center px-3">
+            <div className="mr-5">
+              <PlayerName name={user?.username} />
+            </div>
+
+            <div className="ml-5">
+              {game?.topPlayerId ? <PlayerName name="opponent" /> : <Loading />}
+            </div>
+          </div>
+          <div>
+            <ChessBoard
+              game={game}
+              updateGamePieces={updateGamePieces}
+              makeMove={makeMove}
+            />
+          </div>
         </div>
+      ) : (
+        <ChessPlayOptions
+          handlePlayAi={handlePlayAi}
+          handleJoinPrivate={handleJoinPrivate}
+          handleCreatePrivate={handleCreatePrivate}
+          handlePlayRandom={handlePlayRandom}
+        />
       )}
-    </div>
+      <ShowTextModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        text={game?.id}
+      />
+    </>
   )
 }
 

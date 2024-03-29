@@ -92,18 +92,15 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
     return { col, row }
   }
   return (
-    <div className="max-w-screen flex max-h-full min-h-[92vh] w-full items-center justify-center ">
+    <div className="flex max-h-full items-center justify-center">
       <div
-        className="grid  w-[calc(100vmin-3rem)]  grid-cols-8"
+        className="grid  w-[calc(100vmin-3rem)]  cursor-grab grid-cols-8 active:cursor-grabbing"
         ref={chessBoardRef}
       >
         {game.pieces.map((row, rowIndex) => (
           <React.Fragment key={rowIndex}>
             {row.map((cell, colIndex) => (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                className="aspect-square w-full"
-              >
+              <div key={`${rowIndex}-${colIndex}`} className="aspect-square ">
                 <Tile
                   cell={cell}
                   i={rowIndex}
@@ -113,6 +110,7 @@ function ChessBoard({ game, updateGamePieces, makeMove }) {
                   selectedPiece={selectedPiece.piece}
                   isHighlighted={highlightedMoves[rowIndex]?.[colIndex]}
                   notation={getNotationForTile(rowIndex, colIndex)}
+                  chessBoardRef={chessBoardRef}
                 />
               </div>
             ))}

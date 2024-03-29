@@ -1,4 +1,5 @@
 using API.Extensions;
+using API.Hubs;
 using API.Logic;
 using API.Services;
 using DeviceMicroservice.Data;
@@ -27,10 +28,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(builder => builder.AllowAnyOrigin()
+app.UseCors(corsBuilder =>
+{
+    corsBuilder.WithOrigins("http://localhost:5173")
                .AllowAnyMethod()
-               .AllowAnyHeader());
-
+               .AllowAnyHeader()
+               .AllowCredentials();
+});
 app.UseAuthorization();
 
 app.MapControllers();
@@ -48,4 +52,6 @@ catch (Exception ex)
     var logger = services.GetRequiredService<ILogger<Program>>();
     logger.LogError(ex, "An error occurred while migrating or initializing the database.");
 }
+
+app.MapHub<ChessHub>("/chess-hub");
 app.Run();
