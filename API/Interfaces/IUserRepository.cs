@@ -12,7 +12,7 @@ namespace UserMicroservice.Interfaces
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> GetUserByIdAsync(long id);
         Task<bool> SaveChangesAsync();
-        void Update(User user);
+        Task Update(User user);
         Task Delete(long id);
         Task Add(User user);
     }

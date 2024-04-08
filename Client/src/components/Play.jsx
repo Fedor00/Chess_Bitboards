@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import {
+  createEngineGame,
   createPrivateGame,
   getCurrentGame,
   joinPrivateGame,
@@ -137,7 +138,15 @@ function Play() {
     await resignGameApi(user)
     //dispatch({ type: 'GAME_OVER' })
   }
-
+  const handlePlayAi = async (engineName) => {
+    const data = await createEngineGame(user, engineName)
+    if (data) {
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: processGameUpdate(data),
+      })
+    }
+  }
   return (
     <>
       {gameState.game && (
@@ -155,7 +164,7 @@ function Play() {
       )}
       {!gameState.game && (
         <ChessPlayOptions
-          handlePlayAi={() => {}}
+          handlePlayAi={handlePlayAi}
           handleJoinPrivate={handleJoinPrivate}
           handleCreatePrivate={handleCreatePrivate}
           handlePlayRandom={handlePlayRandom}

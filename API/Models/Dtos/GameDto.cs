@@ -14,6 +14,7 @@ namespace API.Models.Dtos
         public string Id { get; set; }
         public User FirstPlayer { get; set; }
         public User SecondPlayer { get; set; }
+        public ChessEngine Engine { get; set; }
         public bool IsFirstPlayerWhite { get; set; }
         public bool IsWhiteTurn { get; set; }
         public char[][] Pieces { get; set; }

@@ -69,6 +69,24 @@ const createPrivateGame = async (user, isPrivate) => {
     throw new Error(error?.response?.data)
   }
 }
+const createEngineGame = async (user, engineName) => {
+  try {
+    const resp = await axios.post(
+      `${GAME_API_URL}/create-engine-game`,
+      { engineName },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+      },
+    )
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
 const joinPrivateGame = async (user, gameId) => {
   try {
     const resp = await axios.put(
@@ -112,4 +130,5 @@ export {
   createPrivateGame,
   joinPrivateGame,
   resignGameApi,
+  createEngineGame,
 }

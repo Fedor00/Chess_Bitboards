@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using API.Models.Entities;
 using DeviceMicroservice.Data;
@@ -11,38 +9,54 @@ namespace UserMicroservice.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly DataContext _context;
-        public UserRepository(DataContext dataContext)
+        private readonly IDbContextFactory<DataContext> _contextFactory;
+
+        public UserRepository(IDbContextFactory<DataContext> contextFactory)
         {
-            _context = dataContext;
+            _contextFactory = contextFactory;
         }
 
         public async Task Add(User user)
         {
-            await _context.Users.AddAsync(user);
+            using var context = _contextFactory.CreateDbContext();
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
         }
 
         public async Task Delete(long id)
         {
-            var user = await _context.Users.FindAsync(id);
-            _context.Remove(user);
-        }
-        public async Task<bool> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync() > 0;
-        }
-        public async Task<IEnumerable<User>> GetAllUsersAsync()
-        {
-            return await _context.Users.ToListAsync();
-        }
-        public async Task<User> GetUserByIdAsync(long id)
-        {
-            return await _context.Users.FindAsync(id);
+            using var context = _contextFactory.CreateDbContext();
+            var user = await context.Users.FindAsync(id);
+            if (user != null)
+            {
+                context.Users.Remove(user);
+                await context.SaveChangesAsync();
+            }
         }
 
-        public void Update(User user)
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            _context.Entry(user).State = EntityState.Modified;
+            using var context = _contextFactory.CreateDbContext();
+            return await context.Users.ToListAsync();
+        }
+
+        public async Task<User> GetUserByIdAsync(long id)
+        {
+            using var context = _contextFactory.CreateDbContext();
+            return await context.Users.FindAsync(id);
+        }
+
+        public async Task Update(User user)
+        {
+            using var context = _contextFactory.CreateDbContext();
+            context.Entry(user).State = EntityState.Modified;
+            await context.SaveChangesAsync();
+        }
+
+        public async Task<bool> SaveChangesAsync()
+        {
+            using var context = _contextFactory.CreateDbContext();
+            return await context.SaveChangesAsync() > 0;
         }
     }
 }

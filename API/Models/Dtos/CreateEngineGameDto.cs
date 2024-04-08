@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace API.Models.Entities
+namespace API.Models.Dtos
 {
-    public class ChessEngine
+    public class CreateEngineGameDto
     {
-        public long Id { get; set; }
         public string EngineName { get; set; }
     }
 }

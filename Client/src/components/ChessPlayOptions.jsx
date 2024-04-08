@@ -22,7 +22,10 @@ function ChessPlayOptions({
             <Button onClick={() => setPlayFriend(true)} className="w-full py-8">
               Play Against Friend
             </Button>
-            <Button onClick={handlePlayAi} className="w-full py-8">
+            <Button
+              onClick={() => handlePlayAi('stockfish')}
+              className="w-full py-8"
+            >
               Play Against Stockfish
             </Button>
           </div>

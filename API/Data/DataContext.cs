@@ -35,7 +35,7 @@ namespace DeviceMicroservice.Data
 
             modelBuilder.Entity<Game>()
                 .HasOne(eg => eg.Engine)
-                .WithMany(u => u.EngineGames)
+                .WithMany()
                 .HasForeignKey(eg => eg.EngineId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);

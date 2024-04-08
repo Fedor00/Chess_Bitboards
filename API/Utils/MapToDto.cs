@@ -39,6 +39,7 @@ namespace API.Services
                 WhiteMoves = board.Side == White ? currentPlayerMoves : opponentMoves,
                 HalfMoveClock = board.HalfMoveClock,
                 FullMoveNumber = board.FullMoveNumber,
+                Engine = game.Engine,
                 Status = game.Status,
             };
         }

@@ -38,7 +38,7 @@ function ChessBoard({ game, makeMove, resign }) {
           <Button className="" onClick={resign}>
             resign
           </Button>
-          {game?.secondPlayer?.id ? (
+          {opponentUsername ? (
             <PlayerName name={opponentUsername} />
           ) : (
             <Loading />

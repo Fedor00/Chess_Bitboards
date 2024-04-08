@@ -26,16 +26,19 @@ namespace API.Extensions
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
+            services.AddScoped<ChessEngineService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<IChessEngineRepository, ChessEngineRepository>();
             services.AddScoped<GameService>();
             services.AddHttpClient();
             services.AddSignalR();
-            services.AddDbContext<DataContext>(opt =>
+
+            services.AddDbContextFactory<DataContext>(opt =>
             {
                 opt.UseNpgsql(connectionString);
             });
+
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             return services;

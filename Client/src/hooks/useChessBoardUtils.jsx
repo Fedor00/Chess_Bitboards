@@ -6,8 +6,8 @@ function useChessBoardUtils(user, game) {
       : 'black'
   const opponentUsername =
     user?.id === game?.firstPlayer?.id
-      ? game?.secondPlayer?.userName
-      : game?.firstPlayer?.userName
+      ? game?.secondPlayer?.userName || game?.engine?.engineName
+      : game?.firstPlayer?.userName || game?.engine?.engineName
   const getNotationForTile = (i, j) => {
     const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']

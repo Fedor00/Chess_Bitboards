@@ -1,5 +1,6 @@
 import React from 'react'
 import { getPathForPiece } from '../services/Utils'
+import { useRenderCount } from '@/hooks/useRenderCount'
 
 function TileComponent({
   cell,

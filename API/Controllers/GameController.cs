@@ -34,17 +34,10 @@ namespace API.Controllers
             return Ok(moveDto);
         }
         [HttpGet]
-        public async Task<ActionResult<GameDto>> GetGame()
+        public async Task<ActionResult<GameDto>> GetCurrentGame()
         {
             long userId = GetUserId();
-            Game game = await _gameService.GetGame(userId);
-            if (game != null)
-            {
-                var board = new Board(game.Fen);
-                var moves = board.GenerateMovesForBothSides();
-                return Ok(MapToDto.CreateGameDto(game, board, moves[0], moves[1]));
-            }
-            return BadRequest("No game found.");
+            return Ok(await _gameService.GetCurrentGameForPlayer(userId));
         }
         [HttpPost("match-game")]
         public async Task<ActionResult<GameDto>> MatchGame(CreateGameDto createGameDto)
@@ -87,6 +80,16 @@ namespace API.Controllers
             bool resigned = await _gameService.ResignGame(userId);
             if (!resigned) return BadRequest("No game to resign.");
             return Ok();
+        }
+        [HttpPost("create-engine-game")]
+        public async Task<ActionResult<GameDto>> CreateEngineGame(CreateEngineGameDto createEngineGameDto)
+        {
+            long userId = GetUserId();
+            Game game = await _gameService.CreateEngineGame(userId, createEngineGameDto);
+            var board = new Board(game.Fen);
+            var moves = board.GenerateMovesForBothSides();
+
+            return Ok(MapToDto.CreateGameDto(game, board, moves[0], moves[1]));
         }
         private long GetUserId()
         {
