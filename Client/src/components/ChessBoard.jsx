@@ -1,122 +1,93 @@
-import React, { useRef, useState } from 'react'
-import Tile from './Tile'
+import React, { useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  getChessBoardIndex,
-  getCoordinates,
-  isOutOfBounds,
-} from '../services/Utils'
+import { getPathForPiece } from '../services/Utils'
+import PlayerName from './PlayerName'
 
-function ChessBoard({ game, updateGamePieces, makeMove }) {
+import Loading from './Loading'
+import Tile from './Tile'
+import { useDragPiece } from '../hooks/useDragPiece'
+import { useHighlightMoves } from '../hooks/useHighlightMoves'
+import useChessBoardUtils from '../hooks/useChessBoardUtils'
+import { Button } from './ui/button'
+function ChessBoard({ game, makeMove, resign }) {
   const chessBoardRef = useRef(null)
   const { user } = useAuth()
-  const isUserTurn = user?.id === game?.bottomPlayerId ? 'white' : 'black'
-
-  const [highlightedMoves, setHighlightedMoves] = useState([])
-  const [selectedPiece, setSelectedPiece] = useState({
-    i: null,
-    j: null,
-    piece: null,
-  })
-
-  const highlightMoves = (rowIndex, colIndex) => {
-    const movesHighlight = Array.from({ length: 8 }, () => Array(8).fill(false))
-    if (isOutOfBounds(rowIndex, colIndex)) return
-    const fromIndex = getChessBoardIndex(rowIndex, colIndex)
-    const validMoves = game[`${isUserTurn}Moves`]
-
-    validMoves.forEach((move) => {
-      if (move.from === fromIndex) {
-        const { i, j } = getCoordinates(move.to)
-        movesHighlight[i][j] = true
-      }
-    })
-
-    setHighlightedMoves(movesHighlight)
-  }
-
-  const onPieceSelected = (rowIndex, colIndex) => {
-    if (
-      selectedPiece?.i === rowIndex &&
-      selectedPiece?.j === colIndex &&
-      highlightedMoves.length !== 0
-    )
-      setHighlightedMoves([])
-    else highlightMoves(rowIndex, colIndex)
-
-    setSelectedPiece({
-      i: rowIndex,
-      j: colIndex,
-      piece: game.pieces[rowIndex][colIndex],
-    })
-    const newBoard = game.pieces.map((row) => [...row])
-    newBoard[rowIndex][colIndex] = 'X'
-    updateGamePieces(newBoard)
-  }
-
-  const restoreSelectedPiece = () => {
-    const newBoard = game.pieces.map((row) => [...row])
-    newBoard[selectedPiece.i][selectedPiece.j] = selectedPiece.piece
-    updateGamePieces(newBoard)
-  }
-
-  const onDragEnd = async (mouseX, mouseY) => {
-    if (!chessBoardRef.current) return
-    const { left, top, width } = chessBoardRef.current.getBoundingClientRect()
-    const tileWidth = width / game.pieces[0].length
-    const newRowIndex = Math.floor((mouseY - top) / tileWidth)
-    const newColIndex = Math.floor((mouseX - left) / tileWidth)
-    const fromIndex = getChessBoardIndex(selectedPiece.i, selectedPiece.j)
-    const toIndex = getChessBoardIndex(newRowIndex, newColIndex)
-    if (
-      !isOutOfBounds(newRowIndex, newColIndex) &&
-      highlightedMoves[newRowIndex]?.[newColIndex]
-    ) {
-      try {
-        if (fromIndex !== toIndex) {
-          setHighlightedMoves([])
-          await makeMove(fromIndex, toIndex)
-        } else restoreSelectedPiece()
-      } catch (error) {
-        restoreSelectedPiece()
-      }
-    } else {
-      restoreSelectedPiece()
+  const myDivRef = useRef(null)
+  const { playerColor, opponentUsername, getNotationForTile } =
+    useChessBoardUtils(user, game)
+  const { isDragging, imgSize, mousePosition, selectedPiece, handleDragStart } =
+    useDragPiece(game, chessBoardRef, makeMove, playerColor)
+  const { highlightedMoves } = useHighlightMoves(
+    game,
+    playerColor,
+    selectedPiece,
+  )
+  useEffect(() => {
+    if (myDivRef.current) {
+      myDivRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }
-  const getNotationForTile = (i, j) => {
-    const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
-    const col = isUserTurn === 'white' ? colNotation[i] : colNotation[7 - i]
-    const row = isUserTurn === 'white' ? rowNotation[j] : rowNotation[7 - j]
-    return { col, row }
-  }
+  }, [myDivRef])
   return (
-    <div className="flex max-h-full items-center justify-center">
-      <div
-        className="grid  w-[calc(100vmin-3rem)]  cursor-grab grid-cols-8 active:cursor-grabbing"
-        ref={chessBoardRef}
-      >
-        {game.pieces.map((row, rowIndex) => (
-          <React.Fragment key={rowIndex}>
-            {row.map((cell, colIndex) => (
-              <div key={`${rowIndex}-${colIndex}`} className="aspect-square ">
-                <Tile
-                  cell={cell}
-                  i={rowIndex}
-                  j={colIndex}
-                  onPieceSelected={() => onPieceSelected(rowIndex, colIndex)}
-                  onDragEnd={onDragEnd}
-                  selectedPiece={selectedPiece.piece}
-                  isHighlighted={highlightedMoves[rowIndex]?.[colIndex]}
-                  notation={getNotationForTile(rowIndex, colIndex)}
-                  chessBoardRef={chessBoardRef}
-                />
-              </div>
-            ))}
-          </React.Fragment>
-        ))}
+    <div
+      className="mb-2 flex max-h-full flex-col items-center justify-center"
+      ref={myDivRef}
+    >
+      <div className="grid w-[calc(100vmin-3rem)] grid-rows-1">
+        <div className="flex w-full justify-between">
+          <PlayerName name={user?.username} />
+          <Button className="" onClick={resign}>
+            resign
+          </Button>
+          {game?.secondPlayer?.id ? (
+            <PlayerName name={opponentUsername} />
+          ) : (
+            <Loading />
+          )}
+        </div>
+
+        <div
+          className="grid cursor-grab grid-cols-8 active:cursor-grabbing"
+          ref={chessBoardRef}
+        >
+          {game.pieces.map((row, rowIndex) => (
+            <React.Fragment key={rowIndex}>
+              {row.map((cell, colIndex) => (
+                <div key={`${rowIndex}-${colIndex}`} className="aspect-square ">
+                  <Tile
+                    cell={cell}
+                    i={rowIndex}
+                    j={colIndex}
+                    onMouseDown={(e) =>
+                      handleDragStart(e, cell, rowIndex, colIndex)
+                    }
+                    isHighlighted={highlightedMoves[rowIndex]?.[colIndex]}
+                    notation={getNotationForTile(rowIndex, colIndex)}
+                    isPieceSelected={
+                      selectedPiece?.i === rowIndex &&
+                      selectedPiece?.j === colIndex
+                    }
+                  />
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
+      {isDragging && selectedPiece && (
+        <img
+          src={getPathForPiece(selectedPiece.piece)}
+          alt="Dragging piece"
+          className="object-contain"
+          style={{
+            width: imgSize.width,
+            height: imgSize.height,
+            position: 'fixed',
+            left: mousePosition.x - imgSize.width / 2,
+            top: mousePosition.y - imgSize.height / 2,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
     </div>
   )
 }

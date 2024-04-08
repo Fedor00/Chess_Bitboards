@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
 
 function ChessPlayOptions({
   handlePlayRandom,
@@ -10,47 +12,36 @@ function ChessPlayOptions({
   const [gameId, setGameId] = useState('')
 
   return (
-    <div className="mt-2  flex h-[92vh] w-screen justify-center">
+    <div className="flex h-[90vh] w-full justify-center">
       {!playFriend ? (
         <div className="grid grid-cols-1 place-items-center">
-          <div className="w-full max-w-xl px-5">
-            <button
-              onClick={handlePlayRandom}
-              className="mb-1 w-full rounded bg-stone-900 px-7 py-4 font-bold text-white hover:bg-stone-800"
-            >
+          <div className="w-full max-w-xl space-y-1">
+            <Button onClick={handlePlayRandom} className="w-full py-8 ">
               Play Random
-            </button>
-            <button
-              onClick={() => setPlayFriend(true)}
-              className="mb-1 w-full rounded bg-stone-900 px-7 py-4 font-bold text-white hover:bg-stone-800"
-            >
+            </Button>
+            <Button onClick={() => setPlayFriend(true)} className="w-full py-8">
               Play Against Friend
-            </button>
-            <button
-              onClick={handlePlayAi}
-              className="mb-1 w-full rounded bg-stone-900 px-7 py-4 font-bold text-white hover:bg-stone-800"
-            >
-              Play Against Ai
-            </button>
+            </Button>
+            <Button onClick={handlePlayAi} className="w-full py-8">
+              Play Against Stockfish
+            </Button>
           </div>
         </div>
       ) : (
         <div className="flex w-full max-w-lg flex-col content-center justify-center">
-          <div className="w-full">
+          <div className="w-full space-y-1">
             {playFriend && (
-              <div className="mb-1">
-                <div className="relative flex h-10 w-full ">
-                  <button
-                    className="peer-placeholder-shown:bg-blue-gray-500 !absolute right-1 top-1 z-10 select-none rounded bg-stone-700 px-4 py-2 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-pink-500/20 transition-all hover:shadow-lg hover:shadow-pink-500/40 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none peer-placeholder-shown:pointer-events-none peer-placeholder-shown:opacity-50 peer-placeholder-shown:shadow-none"
-                    type="button"
-                    data-ripple-light="true"
+              <div>
+                <div className="spa relative flex h-10 w-full space-x-1">
+                  <Button
                     onClick={() => handleJoinPrivate(gameId)}
+                    className="px-5"
                   >
                     Join
-                  </button>
-                  <input
-                    type="email"
-                    className="border-blue-gray-200 text-blue-gray-700 placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 disabled:bg-blue-gray-50 peer h-full w-full rounded-[7px] border bg-transparent px-3 py-2.5 pr-20 font-sans text-sm font-normal text-white outline outline-0 transition-all placeholder-shown:border focus:border-2 focus:border-pink-500 focus:border-t-transparent focus:outline-0 disabled:border-0"
+                  </Button>
+                  <Input
+                    type="text"
+                    className="h-full w-full rounded-lg bg-stone-800 px-2 py-1 text-slate-200"
                     placeholder="Type Game Id"
                     required
                     value={gameId}
@@ -59,19 +50,15 @@ function ChessPlayOptions({
                 </div>
               </div>
             )}
-            <button
-              onClick={handleCreatePrivate}
-              className="mb-1 w-full rounded bg-stone-900 px-6 py-4 font-bold text-white hover:bg-stone-800"
-            >
+            <Button onClick={handleCreatePrivate} className="w-full py-8">
               Create
-            </button>
-
-            <button
+            </Button>
+            <Button
               onClick={() => setPlayFriend(false)}
-              className="w-full rounded bg-stone-900 px-6 py-4 font-bold text-white hover:bg-stone-800"
+              className="w-full py-8"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}

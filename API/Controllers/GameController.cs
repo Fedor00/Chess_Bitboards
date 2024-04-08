@@ -18,11 +18,11 @@ namespace API.Controllers
     public class GameController : BaseApiController<GameController>
     {
         private readonly GameService _gameService;
-        private readonly IMapper _mapper;
-        public GameController(ILogger<GameController> logger, GameService gameService, IMapper mapper) : base(logger)
+
+        public GameController(ILogger<GameController> logger, GameService gameService) : base(logger)
         {
             _gameService = gameService;
-            _mapper = mapper;
+
         }
 
         [HttpPut("make-move")]
@@ -38,8 +38,13 @@ namespace API.Controllers
         {
             long userId = GetUserId();
             Game game = await _gameService.GetGame(userId);
-            GameDto gameDto = _gameService.GetGameDto(game);
-            return Ok(gameDto);
+            if (game != null)
+            {
+                var board = new Board(game.Fen);
+                var moves = board.GenerateMovesForBothSides();
+                return Ok(MapToDto.CreateGameDto(game, board, moves[0], moves[1]));
+            }
+            return BadRequest("No game found.");
         }
         [HttpPost("match-game")]
         public async Task<ActionResult<GameDto>> MatchGame(CreateGameDto createGameDto)
@@ -54,8 +59,10 @@ namespace API.Controllers
         {
             long userId = GetUserId();
             Game game = await _gameService.CreatePrivateGame(userId, createGameDto);
-            GameDto gameDto = _gameService.GetGameDto(game);
-            return Ok(gameDto);
+            var board = new Board(game.Fen);
+            var moves = board.GenerateMovesForBothSides();
+
+            return Ok(MapToDto.CreateGameDto(game, board, moves[0], moves[1]));
         }
         [HttpPut("join-private-game")]
         public async Task<ActionResult<GameDto>> JoinPrivateGame(JoinPrivateGameDto joinPrivateGameDto)
@@ -71,6 +78,14 @@ namespace API.Controllers
         {
             long userId = GetUserId();
             await _gameService.DeleteGame(gameId);
+            return Ok();
+        }
+        [HttpPut("resign-game")]
+        public async Task<ActionResult> ResignGame()
+        {
+            long userId = GetUserId();
+            bool resigned = await _gameService.ResignGame(userId);
+            if (!resigned) return BadRequest("No game to resign.");
             return Ok();
         }
         private long GetUserId()

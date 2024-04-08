@@ -83,6 +83,8 @@ namespace API.Utils
         public static readonly string Stalemate = "stalemate";
         public static readonly string WhiteWin = "white-win";
         public static readonly string BlackWin = "black-win";
+        public static readonly string WhiteResign = "white-resign";
+        public static readonly string BlackResign = "black-resign";
 
 
 

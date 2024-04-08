@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using API.Logic;
+using API.Models.Entities;
 using static API.Utils.BitbboardUtils;
 
 namespace API.Models.Dtos
@@ -11,8 +12,10 @@ namespace API.Models.Dtos
     public class GameDto
     {
         public string Id { get; set; }
-        public long? TopPlayerId { get; set; }
-        public long? BottomPlayerId { get; set; }
+        public User FirstPlayer { get; set; }
+        public User SecondPlayer { get; set; }
+        public bool IsFirstPlayerWhite { get; set; }
+        public bool IsWhiteTurn { get; set; }
         public char[][] Pieces { get; set; }
         public IEnumerable<Move> BlackMoves { get; set; }
         public IEnumerable<Move> WhiteMoves { get; set; }

@@ -1,4 +1,3 @@
-
 import { useAuth } from '../contexts/AuthContext'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -24,6 +23,23 @@ function Register() {
       setError('Passwords do not match')
       return false
     }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
+      return false
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      setError('Password must contain at least one uppercase letter')
+      return false
+    }
+    if (!/(?=.*[0-9])/.test(password)) {
+      setError('Password must contain at least one number')
+      return false
+    }
+    if (!/(?=.*[^A-Za-z0-9])/.test(password)) {
+      setError('Password must contain at least one non-alphanumeric character')
+      return false
+    }
+
     return true
   }
   const handleSubmit = async (e) => {
@@ -34,11 +50,11 @@ function Register() {
     try {
       setError('')
       await register(email, password, phoneNumber, username)
+      navigate(`/user-play`, { replace: true })
     } catch (err) {
       console.log(err?.message)
       setError(err?.message)
     }
-    navigate(`/user-play`, { replace: true })
   }
 
   return (
@@ -46,7 +62,7 @@ function Register() {
       <HomeNavbar />
       <div className="ml-5 mr-5 mt-10 flex min-h-full flex-1 flex-col items-center justify-center rounded-lg border  bg-sky-500/[.06] px-6  sm:mx-auto sm:w-full sm:max-w-sm lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="mt-2 text-2xl font-bold leading-9 tracking-tight text-center text-indigo-200">
+          <h2 className="mt-2 text-center text-2xl font-bold leading-9 tracking-tight text-indigo-200">
             Sign up
           </h2>
         </div>
@@ -162,7 +178,7 @@ function Register() {
             </div>
           </form>
 
-          <p className="mt-10 text-sm text-center text-gray-100">
+          <p className="mt-10 text-center text-sm text-gray-100">
             Already a member?
             <Link
               to="/login"

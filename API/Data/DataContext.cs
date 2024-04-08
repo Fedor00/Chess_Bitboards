@@ -16,19 +16,27 @@ namespace DeviceMicroservice.Data
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Game> Games { get; set; }
+        public DbSet<ChessEngine> ChessEngines { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Game>()
-                .HasOne(g => g.TopPlayer)
-                .WithMany(u => u.TopPlayerGames)
-                .HasForeignKey(g => g.TopPlayerId)
+                .HasOne(g => g.FirstPlayer)
+                .WithMany()
+                .HasForeignKey(g => g.FirstPlayerId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Game>()
-                .HasOne(g => g.BottomPlayer)
-                .WithMany(u => u.BottomPlayerGames)
-                .HasForeignKey(g => g.BottomPlayerId)
+                .HasOne(g => g.SecondPlayer)
+                .WithMany()
+                .HasForeignKey(g => g.SecondPlayerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Game>()
+                .HasOne(eg => eg.Engine)
+                .WithMany(u => u.EngineGames)
+                .HasForeignKey(eg => eg.EngineId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }

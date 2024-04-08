@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-
+import { useCallback, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   createPrivateGame,
@@ -7,118 +6,178 @@ import {
   joinPrivateGame,
   makeMoveApi,
   matchGameApi,
+  resignGameApi,
 } from '../services/GameApi'
-
-import ChessBoard from './Chessboard'
 import { flipMoves, flipPieces } from '../services/Utils'
 import { getChessAudio, playAudio } from '../services/AudioEffects'
 import { CHESS_SOUNDS, DEFAULT_PIECES } from '../config'
 import ChessPlayOptions from './ChessPlayOptions'
-import PlayerName from './PlayerName'
 import ShowTextModal from './ShowTextModal'
-import Loading from './Loading'
 import { useChessSignal } from '../contexts/SignalRContext'
+import GameOverModal from './GameOverModal'
+import ChessBoard from './ChessBoard'
+import useGameReducer, { GameActionTypes } from '../reducers/useGameReducer'
+import useChessBoardUtils from '../hooks/useChessBoardUtils'
 
 function Play() {
   const { user } = useAuth()
-  const [game, setGame] = useState()
-  const [showModal, setShowModal] = useState(false)
+  const { state: gameState, dispatch } = useGameReducer()
+  const { playerColor } = useChessBoardUtils(user, gameState.game)
   const { connection } = useChessSignal()
+  const processGameUpdate = useCallback(
+    (gameData) => {
+      let updatedGame = { ...gameData }
+      console.log(playerColor)
+      if (playerColor === 'black') {
+        updatedGame = {
+          ...updatedGame,
+          pieces: flipPieces(updatedGame.pieces),
+          blackMoves: flipMoves(updatedGame.blackMoves),
+        }
+      }
+      return updatedGame
+    },
+    [playerColor],
+  )
+  const handleMoveMade = useCallback(
+    (moveData) => {
+      if (!moveData) return
+      playAudio(getChessAudio(moveData))
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: processGameUpdate(moveData?.gameDto),
+      })
+
+      if (
+        moveData?.gameDto?.status !== 'waiting' &&
+        moveData?.gameDto?.status !== 'playing'
+      ) {
+        dispatch({
+          type: GameActionTypes.GAME_OVER,
+          payload: moveData?.gameDto?.status,
+        })
+      }
+    },
+    [dispatch, processGameUpdate],
+  )
   useEffect(() => {
-    if (connection) {
+    const setupSignalRListeners = () => {
       connection.on('MoveMade', (moveData) => {
-        updatGameState(moveData.gameDto)
+        handleMoveMade(moveData)
       })
       connection.on('GameStarted', (gameData) => {
-        updatGameState(gameData)
+        dispatch({
+          type: GameActionTypes.UPDATE_GAME,
+          payload: processGameUpdate(gameData),
+        })
         playAudio(new Audio(`${CHESS_SOUNDS}/notify.mp3`))
       })
+      connection.on('GameResigned', (gameStatus) => {
+        dispatch({ type: GameActionTypes.GAME_OVER, payload: gameStatus })
+        playAudio(new Audio(`${CHESS_SOUNDS}/checkmate.mp3`))
+      })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connection])
-
-  const updatGameState = (newGame) => {
-    if (user?.id !== newGame.bottomPlayerId) {
-      newGame.pieces = flipPieces(newGame.pieces)
-      newGame.moves = flipMoves(newGame.blackMoves)
+    if (connection) {
+      setupSignalRListeners()
+      return () => {
+        connection.off('MoveMade')
+        connection.off('GameStarted')
+        connection.off('GameResigned')
+      }
     }
+  }, [connection, dispatch, handleMoveMade, processGameUpdate, user])
 
-    setGame(newGame)
-  }
   useEffect(() => {
     const fetchGame = async () => {
       const gameData = await getCurrentGame(user)
-      if (gameData) updatGameState(gameData)
-      else setGame(DEFAULT_PIECES)
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: gameData ? processGameUpdate(gameData) : DEFAULT_PIECES,
+      })
     }
+
     if (user) fetchGame()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user, dispatch, processGameUpdate])
 
   const makeMove = async (from, to) => {
-    const moveData = await makeMoveApi(user, from, to)
-    playSound(moveData)
+    await makeMoveApi(user, from, to)
+    // Consider dispatching an update action after making a move if necessary.
   }
-  const playSound = (moveData) => {
-    if (moveData) {
-      const audio = getChessAudio(moveData)
-      playAudio(audio)
-    }
-  }
-  const updateGamePieces = (newPieces) => {
-    setGame((current) => ({ ...current, pieces: newPieces }))
-  }
-  const handlePlayAi = async () => {
-    //TODO: Implement playing against AI
-  }
+
   const handleCreatePrivate = async () => {
     const data = await createPrivateGame(user, true)
     if (data) {
-      setShowModal(true)
-      updatGameState(data)
+      dispatch({ type: GameActionTypes.SHOW_MODAL })
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: processGameUpdate(data),
+      })
     }
   }
+
   const handleJoinPrivate = async (gameId) => {
     const data = await joinPrivateGame(user, gameId)
-    if (data) updatGameState(data)
+    if (data)
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: processGameUpdate(data),
+      })
   }
+
   const handlePlayRandom = async () => {
     const data = await matchGameApi(user, false)
-    if (data) updatGameState(data)
+    if (data)
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: processGameUpdate(data),
+      })
   }
+
+  const resign = async () => {
+    await resignGameApi(user)
+    //dispatch({ type: 'GAME_OVER' })
+  }
+
   return (
     <>
-      {game ? (
-        <div>
-          <div className="flex flex-row content-center justify-center px-3">
-            <div className="mr-5">
-              <PlayerName name={user?.username} />
-            </div>
-
-            <div className="ml-5">
-              {game?.topPlayerId ? <PlayerName name="opponent" /> : <Loading />}
-            </div>
-          </div>
-          <div>
-            <ChessBoard
-              game={game}
-              updateGamePieces={updateGamePieces}
-              makeMove={makeMove}
-            />
-          </div>
-        </div>
-      ) : (
+      {gameState.game && (
+        <ChessBoard
+          game={gameState.game}
+          updateGamePieces={(newPieces) =>
+            dispatch({
+              type: GameActionTypes.UPDATE_PIECES,
+              payload: newPieces,
+            })
+          }
+          makeMove={makeMove}
+          resign={resign}
+        />
+      )}
+      {!gameState.game && (
         <ChessPlayOptions
-          handlePlayAi={handlePlayAi}
+          handlePlayAi={() => {}}
           handleJoinPrivate={handleJoinPrivate}
           handleCreatePrivate={handleCreatePrivate}
           handlePlayRandom={handlePlayRandom}
         />
       )}
       <ShowTextModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        text={game?.id}
+        showModal={gameState.showModal}
+        setShowModal={(show) =>
+          dispatch({ type: GameActionTypes.TOGGLE_MODAL, payload: show })
+        }
+        text={gameState.game?.id}
+      />
+      <GameOverModal
+        showModal={gameState.showGameOver}
+        setShowModal={(show) =>
+          dispatch({
+            type: GameActionTypes.TOGGLE_GAME_OVER_MODAL,
+            payload: show,
+          })
+        }
+        onClose={() => dispatch({ type: GameActionTypes.RESET_GAME })}
+        gameStatus={gameState.gameStatus}
       />
     </>
   )

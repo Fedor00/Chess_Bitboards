@@ -12,15 +12,16 @@ namespace API.Models.Entities
             Id = Guid.NewGuid().ToString();
         }
         public string Id { get; set; }
-        public long? TopPlayerId { get; set; }
-        public long? BottomPlayerId { get; set; }
-        public User TopPlayer { get; set; }
-        public User BottomPlayer { get; set; }
+        public long? FirstPlayerId { get; set; }
+        public long? SecondPlayerId { get; set; }
+        public long? EngineId { get; set; }
+        public bool IsFirstPlayerWhite { get; set; }
+        public User FirstPlayer { get; set; }
+        public User SecondPlayer { get; set; }
+        public ChessEngine Engine { get; set; }
         public string Fen { get; set; }
         public string Status { get; set; }
         public DateTime StartTime { get; set; }
         public bool IsPrivate { get; set; }
-
-
     }
 }

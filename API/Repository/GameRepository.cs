@@ -25,15 +25,18 @@ namespace API.Repository
 
         public async Task<Game> GetGameAsync(string id)
         {
-            return await _context.Games.FindAsync(id);
+            return await _context.Games
+                .Include(game => game.FirstPlayer)
+                .Include(game => game.SecondPlayer)
+                .SingleOrDefaultAsync(game => game.Id == id);
         }
 
         public async Task<Game> GetGameForPlayerAsync(long id)
         {
             return await _context.Games.Where(game =>
-                            (game.TopPlayerId == id ||
-                            game.BottomPlayerId == id) &&
-                            (game.Status == "waiting" || game.Status == "playing")).FirstOrDefaultAsync();
+                            (game.SecondPlayerId == id ||
+                            game.FirstPlayerId == id) &&
+                            (game.Status == "waiting" || game.Status == "playing")).Include(game => game.FirstPlayer).Include(game => game.SecondPlayer).FirstOrDefaultAsync();
         }
 
         public void UpdateGame(Game game)
@@ -47,7 +50,7 @@ namespace API.Repository
 
         public Task<Game> GetMatchingGame(bool isPrivate)
         {
-            return _context.Games.Where(game => game.Status == "waiting" && isPrivate == game.IsPrivate).FirstOrDefaultAsync();
+            return _context.Games.Where(game => game.Status == "waiting" && isPrivate == game.IsPrivate).Include(game => game.FirstPlayer).FirstOrDefaultAsync();
         }
 
         public async Task DeleteGame(string gameId)

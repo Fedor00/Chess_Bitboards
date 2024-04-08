@@ -28,6 +28,7 @@ namespace API.Extensions
             services.AddSwaggerGen();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IGameRepository, GameRepository>();
+            services.AddScoped<IChessEngineRepository, ChessEngineRepository>();
             services.AddScoped<GameService>();
             services.AddHttpClient();
             services.AddSignalR();

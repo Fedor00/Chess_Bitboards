@@ -1,3 +1,5 @@
+import { MIDNIGHT_PATH } from "../config"
+
 // Convert a single number from 0-63 to i and j coordinates
 export function getCoordinates(number) {
   const i = Math.floor(number / 8)
@@ -21,11 +23,16 @@ export const flipPieces = (pieces) => {
   })
 }
 export const flipMoves = (moves) => {
-  return moves.map((move) => {
-    move.from = 63 - move.from
-    move.to = 63 - move.to
-    return move
-  })
+  return moves.map((move) => ({
+    ...move,
+    from: 63 - move.from,
+    to: 63 - move.to,
+  }))
 }
+
 export const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 export const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
+export const getPathForPiece = (piece) => {
+  const pieceColor = piece === piece.toLowerCase() ? 'b' : 'w'
+  return `${MIDNIGHT_PATH}/${pieceColor}${piece.toUpperCase()}.svg`
+}

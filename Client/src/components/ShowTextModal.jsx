@@ -18,10 +18,10 @@ function ShowTextModal({ showModal, setShowModal, text }) {
   return (
     <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
       <div className="flex flex-row">
-        <h1 className="rounded-lg bg-slate-900 p-4">{text}</h1>
+        <h1 className="p-4 rounded-lg bg-slate-900">{text}</h1>
         <button
           onClick={onCopy}
-          className="ml-4 rounded bg-slate-900 px-4 py-2 text-white transition duration-200 hover:bg-slate-700"
+          className="px-4 py-2 ml-4 text-white transition duration-200 rounded bg-slate-900 hover:bg-slate-700"
         >
           {copied ? 'Copied' : 'Copy'}
         </button>

@@ -1,4 +1,3 @@
-import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -11,6 +10,7 @@ import ProtectedRoutes from './components/ProtectedRoutes'
 import Play from './components/Play'
 import Register from './pages/Register'
 import { ChessSignalRProvider } from './contexts/SignalRContext'
+
 function App() {
   return (
     <AuthProvider>

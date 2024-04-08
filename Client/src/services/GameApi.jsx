@@ -87,11 +87,29 @@ const joinPrivateGame = async (user, gameId) => {
     throw new Error(error?.response?.data)
   }
 }
-
+const resignGameApi = async (user) => {
+  try {
+    const resp = await axios.put(
+      `${GAME_API_URL}/resign-game`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+      },
+    )
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
 export {
   getCurrentGame,
   makeMoveApi,
   matchGameApi,
   createPrivateGame,
   joinPrivateGame,
+  resignGameApi,
 }

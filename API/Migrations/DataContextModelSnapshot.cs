@@ -22,19 +22,44 @@ namespace API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("API.Models.Entities.ChessEngine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("EngineName")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChessEngines");
+                });
+
             modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<long?>("BottomPlayerId")
+                    b.Property<long?>("EngineId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Fen")
                         .HasColumnType("text");
 
+                    b.Property<long?>("FirstPlayerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsFirstPlayerWhite")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("boolean");
+
+                    b.Property<long?>("SecondPlayerId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
@@ -42,14 +67,13 @@ namespace API.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<long?>("TopPlayerId")
-                        .HasColumnType("bigint");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("BottomPlayerId");
+                    b.HasIndex("EngineId");
 
-                    b.HasIndex("TopPlayerId");
+                    b.HasIndex("FirstPlayerId");
+
+                    b.HasIndex("SecondPlayerId");
 
                     b.ToTable("Games");
                 });
@@ -62,6 +86,9 @@ namespace API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("UserName")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Users");
@@ -69,26 +96,31 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
-                    b.HasOne("API.Models.Entities.User", "BottomPlayer")
-                        .WithMany("BottomPlayerGames")
-                        .HasForeignKey("BottomPlayerId")
+                    b.HasOne("API.Models.Entities.ChessEngine", "Engine")
+                        .WithMany("EngineGames")
+                        .HasForeignKey("EngineId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("API.Models.Entities.User", "TopPlayer")
-                        .WithMany("TopPlayerGames")
-                        .HasForeignKey("TopPlayerId")
+                    b.HasOne("API.Models.Entities.User", "FirstPlayer")
+                        .WithMany()
+                        .HasForeignKey("FirstPlayerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("BottomPlayer");
+                    b.HasOne("API.Models.Entities.User", "SecondPlayer")
+                        .WithMany()
+                        .HasForeignKey("SecondPlayerId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("TopPlayer");
+                    b.Navigation("Engine");
+
+                    b.Navigation("FirstPlayer");
+
+                    b.Navigation("SecondPlayer");
                 });
 
-            modelBuilder.Entity("API.Models.Entities.User", b =>
+            modelBuilder.Entity("API.Models.Entities.ChessEngine", b =>
                 {
-                    b.Navigation("BottomPlayerGames");
-
-                    b.Navigation("TopPlayerGames");
+                    b.Navigation("EngineGames");
                 });
 #pragma warning restore 612, 618
         }

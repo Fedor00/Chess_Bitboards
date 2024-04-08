@@ -887,5 +887,21 @@ namespace API.Logic
                 }
             }
         }
+        public IEnumerable<Move>[] GenerateMovesForBothSides()
+        {
+            int moveCount = 0;
+            // get all legal moves for the current player
+            int[] moves = GenerateLegalMoves(ref moveCount);
+            IEnumerable<Move> currentPlayerMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
+            //reset enpassant since generating moves for the other player 
+            Side ^= 1; // switch side
+            Enpassant = None;
+            moveCount = 0;
+            // get all legal moves for the other player
+            moves = GenerateLegalMoves(ref moveCount);
+            IEnumerable<Move> opponentMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
+            Side ^= 1; // switch side back
+            return [currentPlayerMoves, opponentMoves];
+        }
     }
 }

@@ -16,6 +16,7 @@ namespace UserMicroservice.Data
 
             foreach (var user in users)
             {
+                Console.WriteLine(user.UserName);
                 await context.Users.AddAsync(user);
             }
             await context.SaveChangesAsync();
