@@ -1,4 +1,4 @@
-import { MIDNIGHT_PATH } from "../config"
+import { MIDNIGHT_PATH } from '../config'
 
 // Convert a single number from 0-63 to i and j coordinates
 export function getCoordinates(number) {
@@ -35,4 +35,11 @@ export const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
 export const getPathForPiece = (piece) => {
   const pieceColor = piece === piece.toLowerCase() ? 'b' : 'w'
   return `${MIDNIGHT_PATH}/${pieceColor}${piece.toUpperCase()}.svg`
+}
+export const getNotationForTile = (i, j, playerColor) => {
+  const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
+  const col = playerColor === 'white' ? colNotation[i] : colNotation[7 - i]
+  const row = playerColor === 'white' ? rowNotation[j] : rowNotation[7 - j]
+  return { col, row }
 }

@@ -32,7 +32,7 @@ namespace API.Logic.ChessEngines
                 throw new InvalidOperationException("Failed to start Stockfish process.");
             }
             _stockfishProcess.StandardInput.WriteLine($"position fen {fen}");
-            _stockfishProcess.StandardInput.WriteLine("go movetime 2000");
+            _stockfishProcess.StandardInput.WriteLine("go depth 18");
 
             string output;
             string bestMoveLine = "bestmove";

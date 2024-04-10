@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 
 function ChessPlayOptions({
   handlePlayRandom,
@@ -27,6 +27,12 @@ function ChessPlayOptions({
               className="w-full py-8"
             >
               Play Against Stockfish
+            </Button>
+            <Button
+              onClick={() => handlePlayAi('dummy')}
+              className="w-full py-8"
+            >
+              Play Against Dummy Ai
             </Button>
           </div>
         </div>

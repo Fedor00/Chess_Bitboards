@@ -7,7 +7,7 @@ import Unauthorized from './pages/Unauthorized'
 import Homepage from './pages/Homepage'
 import Login from './pages/Login'
 import ProtectedRoutes from './components/ProtectedRoutes'
-import Play from './components/Play'
+import Play from './components/chess/Play'
 import Register from './pages/Register'
 import { ChessSignalRProvider } from './contexts/SignalRContext'
 

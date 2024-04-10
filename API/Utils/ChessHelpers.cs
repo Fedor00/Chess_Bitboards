@@ -81,10 +81,12 @@ namespace API.Utils
         public static readonly string Waiting = "waiting";
         public static readonly string Draw = "draw";
         public static readonly string Stalemate = "stalemate";
-        public static readonly string WhiteWin = "white-win";
-        public static readonly string BlackWin = "black-win";
-        public static readonly string WhiteResign = "white-resign";
-        public static readonly string BlackResign = "black-resign";
+        public static readonly string WhiteWin = "white-won";
+        public static readonly string BlackWin = "black-won";
+        public static readonly string WhiteResign = "white-resigned";
+        public static readonly string BlackResign = "black-resigned";
+        public const string StockfishEngineName = "stockfish";
+        public const string DummyEngineName = "dummy";
 
 
 

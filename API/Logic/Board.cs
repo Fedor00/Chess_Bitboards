@@ -895,12 +895,14 @@ namespace API.Logic
             IEnumerable<Move> currentPlayerMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
             //reset enpassant since generating moves for the other player 
             Side ^= 1; // switch side
+            PreviousEnpassant = Enpassant;
             Enpassant = None;
             moveCount = 0;
             // get all legal moves for the other player
             moves = GenerateLegalMoves(ref moveCount);
             IEnumerable<Move> opponentMoves = moves.Take(moveCount).Select(m => new Move { From = GetMoveSource(m), To = GetMoveTarget(m) });
             Side ^= 1; // switch side back
+            Enpassant = PreviousEnpassant;
             return [currentPlayerMoves, opponentMoves];
         }
     }

@@ -8,17 +8,11 @@ function useChessBoardUtils(user, game) {
     user?.id === game?.firstPlayer?.id
       ? game?.secondPlayer?.userName || game?.engine?.engineName
       : game?.firstPlayer?.userName || game?.engine?.engineName
-  const getNotationForTile = (i, j) => {
-    const rowNotation = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    const colNotation = ['8', '7', '6', '5', '4', '3', '2', '1']
-    const col = playerColor === 'white' ? colNotation[i] : colNotation[7 - i]
-    const row = playerColor === 'white' ? rowNotation[j] : rowNotation[7 - j]
-    return { col, row }
-  }
+
   const isPlayerTurn =
     (playerColor === 'white' && game?.isFirstPlayerWhite) ||
     (playerColor === 'black' && !game?.isFirstPlayerWhite)
-  return { playerColor, opponentUsername, getNotationForTile, isPlayerTurn }
+  return { playerColor, opponentUsername, isPlayerTurn }
 }
 
 export default useChessBoardUtils

@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   createEngineGame,
   createPrivateGame,
@@ -8,17 +8,17 @@ import {
   makeMoveApi,
   matchGameApi,
   resignGameApi,
-} from '../services/GameApi'
-import { flipMoves, flipPieces } from '../services/Utils'
-import { getChessAudio, playAudio } from '../services/AudioEffects'
-import { CHESS_SOUNDS, DEFAULT_PIECES } from '../config'
+} from '../../services/GameApi'
+import { flipMoves, flipPieces } from '../../services/Utils'
+import { getChessAudio, playAudio } from '../../services/AudioEffects'
+import { CHESS_SOUNDS } from '../../config'
 import ChessPlayOptions from './ChessPlayOptions'
-import ShowTextModal from './ShowTextModal'
-import { useChessSignal } from '../contexts/SignalRContext'
+import ShowTextModal from '../ShowTextModal'
+import { useChessSignal } from '../../contexts/SignalRContext'
 import GameOverModal from './GameOverModal'
 import ChessBoard from './ChessBoard'
-import useGameReducer, { GameActionTypes } from '../reducers/useGameReducer'
-import useChessBoardUtils from '../hooks/useChessBoardUtils'
+import useGameReducer, { GameActionTypes } from '../../reducers/useGameReducer'
+import useChessBoardUtils from '../../hooks/useChessBoardUtils'
 
 function Play() {
   const { user } = useAuth()
@@ -28,7 +28,7 @@ function Play() {
   const processGameUpdate = useCallback(
     (gameData) => {
       let updatedGame = { ...gameData }
-      console.log(playerColor)
+
       if (playerColor === 'black') {
         updatedGame = {
           ...updatedGame,
@@ -36,19 +36,18 @@ function Play() {
           blackMoves: flipMoves(updatedGame.blackMoves),
         }
       }
-      return updatedGame
+      dispatch({
+        type: GameActionTypes.UPDATE_GAME,
+        payload: updatedGame,
+      })
     },
-    [playerColor],
+    [dispatch, playerColor],
   )
   const handleMoveMade = useCallback(
     (moveData) => {
       if (!moveData) return
       playAudio(getChessAudio(moveData))
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: processGameUpdate(moveData?.gameDto),
-      })
-
+      processGameUpdate(moveData.gameDto)
       if (
         moveData?.gameDto?.status !== 'waiting' &&
         moveData?.gameDto?.status !== 'playing'
@@ -64,13 +63,12 @@ function Play() {
   useEffect(() => {
     const setupSignalRListeners = () => {
       connection.on('MoveMade', (moveData) => {
+        console.log(moveData)
         handleMoveMade(moveData)
       })
       connection.on('GameStarted', (gameData) => {
-        dispatch({
-          type: GameActionTypes.UPDATE_GAME,
-          payload: processGameUpdate(gameData),
-        })
+        processGameUpdate(gameData)
+
         playAudio(new Audio(`${CHESS_SOUNDS}/notify.mp3`))
       })
       connection.on('GameResigned', (gameStatus) => {
@@ -91,10 +89,7 @@ function Play() {
   useEffect(() => {
     const fetchGame = async () => {
       const gameData = await getCurrentGame(user)
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: gameData ? processGameUpdate(gameData) : DEFAULT_PIECES,
-      })
+      processGameUpdate(gameData)
     }
 
     if (user) fetchGame()
@@ -106,32 +101,21 @@ function Play() {
   }
 
   const handleCreatePrivate = async () => {
-    const data = await createPrivateGame(user, true)
-    if (data) {
+    const gameData = await createPrivateGame(user, true)
+    if (gameData) {
       dispatch({ type: GameActionTypes.SHOW_MODAL })
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: processGameUpdate(data),
-      })
+      processGameUpdate(gameData)
     }
   }
 
   const handleJoinPrivate = async (gameId) => {
-    const data = await joinPrivateGame(user, gameId)
-    if (data)
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: processGameUpdate(data),
-      })
+    const gameData = await joinPrivateGame(user, gameId)
+    if (gameData) processGameUpdate(gameData)
   }
 
   const handlePlayRandom = async () => {
-    const data = await matchGameApi(user, false)
-    if (data)
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: processGameUpdate(data),
-      })
+    const gameData = await matchGameApi(user, false)
+    if (gameData) processGameUpdate(gameData)
   }
 
   const resign = async () => {
@@ -139,28 +123,15 @@ function Play() {
     //dispatch({ type: 'GAME_OVER' })
   }
   const handlePlayAi = async (engineName) => {
-    const data = await createEngineGame(user, engineName)
-    if (data) {
-      dispatch({
-        type: GameActionTypes.UPDATE_GAME,
-        payload: processGameUpdate(data),
-      })
+    const gameData = await createEngineGame(user, engineName)
+    if (gameData) {
+      if (gameData.isFirstPlayerWhite) processGameUpdate(gameData)
     }
   }
   return (
     <>
       {gameState.game && (
-        <ChessBoard
-          game={gameState.game}
-          updateGamePieces={(newPieces) =>
-            dispatch({
-              type: GameActionTypes.UPDATE_PIECES,
-              payload: newPieces,
-            })
-          }
-          makeMove={makeMove}
-          resign={resign}
-        />
+        <ChessBoard game={gameState.game} makeMove={makeMove} resign={resign} />
       )}
       {!gameState.game && (
         <ChessPlayOptions

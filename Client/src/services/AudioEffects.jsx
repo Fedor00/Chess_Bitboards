@@ -8,7 +8,7 @@ export const getChessAudio = (moveData) => {
   if (moveData?.isCheckmate) audio = new Audio(`${CHESS_SOUNDS}/checkmate.mp3`)
   else if (moveData?.isCheck) audio = new Audio(`${CHESS_SOUNDS}/check.mp3`)
   else if (moveData?.isDraw || moveData.isStalemate)
-    audio = new Audio(`${CHESS_SOUNDS}/draw.mp3`)
+    audio = new Audio(`${CHESS_SOUNDS}/checkmate.mp3`)
   else if (moveData?.isCapture) audio = new Audio(`${CHESS_SOUNDS}/capture.mp3`)
   else if (moveData?.isCastle) audio = new Audio(`${CHESS_SOUNDS}/castle.mp3`)
   else if (moveData?.isPromotion)

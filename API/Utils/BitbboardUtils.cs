@@ -101,6 +101,11 @@ namespace API.Utils
                     Console.WriteLine($"{Coordinates[GetMoveSource(move)]}{Coordinates[GetMoveTarget(move)]}{promotion}      {AsciiPiece[GetMovePiece(move)]}    {IsMoveDoublePawnPush(move)}   {IsMoveEnpassant(move)}    {IsMoveCastle(move)}  {IsMoveCapture(move)}");
             }
         }
+        public static string MoveToString(int move)
+        {
+            string promotion = GetMovePromoted(move) != 0 ? PieceToChar[GetMovePromoted(move)].ToString() : "";
+            return $"{Coordinates[GetMoveSource(move)]}{Coordinates[GetMoveTarget(move)]}{promotion}";
+        }
         public static void PrintBoard(Board board)
         {
             char[][] boardRepresentation = new char[8][];

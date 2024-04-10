@@ -94,6 +94,7 @@ namespace API.Services
                 IsFirstPlayerWhite = new Random().Next(0, 2) == 0,
                 Status = Playing,
                 Fen = INITIAL_FEN,
+                StartTime = DateTime.UtcNow,
                 IsPrivate = true,
             };
             await _gameRepository.AddGameAsync(game);
@@ -105,6 +106,7 @@ namespace API.Services
                 var engineFactory = new ChessEngineFactory();
                 var chessEngine = engineFactory.CreateEngine(game.Engine.EngineName);
                 _ = Task.Run(() => _chessEngineService.MakeEngineMove(chessEngine, game, board));
+
             }
             return game;
         }
@@ -164,10 +166,11 @@ namespace API.Services
             var secondPlayer = await _userRepository.GetUserByIdAsync(playerId);
             if (secondPlayer == null) throw new ArgumentException("Player not found.");
 
-            game.SecondPlayer = secondPlayer;
+            game.SecondPlayerId = secondPlayer.Id;
             game.Status = Playing;
             game.StartTime = DateTime.UtcNow;
             await _gameRepository.UpdateGame(game);
+            game.SecondPlayer = secondPlayer;
             var board = new Board(game.Fen);
             var moves = board.GenerateMovesForBothSides();
             var gameDto = MapToDto.CreateGameDto(game, board, moves[0], moves[1]);
