@@ -17,8 +17,16 @@ namespace DeviceMicroservice.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Game> Games { get; set; }
         public DbSet<ChessEngine> ChessEngines { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(cm => cm.Game)
+                .WithMany(g => g.ChatMessages)
+                .HasForeignKey(cm => cm.GameId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Game>()
                 .HasOne(g => g.FirstPlayer)
                 .WithMany()

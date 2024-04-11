@@ -22,6 +22,36 @@ namespace API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("API.Models.Entities.ChatMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GameId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatMessages");
+                });
+
             modelBuilder.Entity("API.Models.Entities.ChessEngine", b =>
                 {
                     b.Property<long>("Id")
@@ -94,6 +124,25 @@ namespace API.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("API.Models.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("API.Models.Entities.Game", "Game")
+                        .WithMany("ChatMessages")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Entities.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
                     b.HasOne("API.Models.Entities.ChessEngine", "Engine")
@@ -116,6 +165,11 @@ namespace API.Migrations
                     b.Navigation("FirstPlayer");
 
                     b.Navigation("SecondPlayer");
+                });
+
+            modelBuilder.Entity("API.Models.Entities.Game", b =>
+                {
+                    b.Navigation("ChatMessages");
                 });
 #pragma warning restore 612, 618
         }

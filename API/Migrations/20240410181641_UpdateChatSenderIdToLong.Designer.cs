@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240403154245_AddChessEngineAndEngineGames")]
-    partial class AddChessEngineAndEngineGames
+    [Migration("20240410181641_UpdateChatSenderIdToLong")]
+    partial class UpdateChatSenderIdToLong
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,36 @@ namespace API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("API.Models.Entities.ChatMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GameId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatMessages");
+                });
 
             modelBuilder.Entity("API.Models.Entities.ChessEngine", b =>
                 {
@@ -41,23 +71,27 @@ namespace API.Migrations
                     b.ToTable("ChessEngines");
                 });
 
-            modelBuilder.Entity("API.Models.Entities.EngineGame", b =>
+            modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
                     b.Property<long?>("EngineId")
-                        .IsRequired()
                         .HasColumnType("bigint");
 
                     b.Property<string>("Fen")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsPlayerWhite")
+                    b.Property<long?>("FirstPlayerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsFirstPlayerWhite")
                         .HasColumnType("boolean");
 
-                    b.Property<long?>("PlayerId")
-                        .IsRequired()
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean");
+
+                    b.Property<long?>("SecondPlayerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("StartTime")
@@ -70,39 +104,9 @@ namespace API.Migrations
 
                     b.HasIndex("EngineId");
 
-                    b.HasIndex("PlayerId");
+                    b.HasIndex("FirstPlayerId");
 
-                    b.ToTable("EngineGames");
-                });
-
-            modelBuilder.Entity("API.Models.Entities.Game", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<long?>("BottomPlayerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Fen")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsPrivate")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("text");
-
-                    b.Property<long?>("TopPlayerId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BottomPlayerId");
-
-                    b.HasIndex("TopPlayerId");
+                    b.HasIndex("SecondPlayerId");
 
                     b.ToTable("Games");
                 });
@@ -123,54 +127,52 @@ namespace API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("API.Models.Entities.EngineGame", b =>
+            modelBuilder.Entity("API.Models.Entities.ChatMessage", b =>
                 {
-                    b.HasOne("API.Models.Entities.ChessEngine", "Engine")
-                        .WithMany("EngineGames")
-                        .HasForeignKey("EngineId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("API.Models.Entities.Game", "Game")
+                        .WithMany("ChatMessages")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API.Models.Entities.User", "Player")
-                        .WithMany("EngineGames")
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("API.Models.Entities.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Engine");
+                    b.Navigation("Game");
 
-                    b.Navigation("Player");
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
-                    b.HasOne("API.Models.Entities.User", "BottomPlayer")
-                        .WithMany("BottomPlayerGames")
-                        .HasForeignKey("BottomPlayerId")
+                    b.HasOne("API.Models.Entities.ChessEngine", "Engine")
+                        .WithMany()
+                        .HasForeignKey("EngineId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("API.Models.Entities.User", "TopPlayer")
-                        .WithMany("TopPlayerGames")
-                        .HasForeignKey("TopPlayerId")
+                    b.HasOne("API.Models.Entities.User", "FirstPlayer")
+                        .WithMany()
+                        .HasForeignKey("FirstPlayerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("BottomPlayer");
+                    b.HasOne("API.Models.Entities.User", "SecondPlayer")
+                        .WithMany()
+                        .HasForeignKey("SecondPlayerId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("TopPlayer");
+                    b.Navigation("Engine");
+
+                    b.Navigation("FirstPlayer");
+
+                    b.Navigation("SecondPlayer");
                 });
 
-            modelBuilder.Entity("API.Models.Entities.ChessEngine", b =>
+            modelBuilder.Entity("API.Models.Entities.Game", b =>
                 {
-                    b.Navigation("EngineGames");
-                });
-
-            modelBuilder.Entity("API.Models.Entities.User", b =>
-                {
-                    b.Navigation("BottomPlayerGames");
-
-                    b.Navigation("EngineGames");
-
-                    b.Navigation("TopPlayerGames");
+                    b.Navigation("ChatMessages");
                 });
 #pragma warning restore 612, 618
         }

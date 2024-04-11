@@ -30,7 +30,9 @@ namespace API.Extensions
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<IChessEngineRepository, ChessEngineRepository>();
+            services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
             services.AddScoped<GameService>();
+            services.AddScoped<ChatService>();
             services.AddHttpClient();
             services.AddSignalR();
 

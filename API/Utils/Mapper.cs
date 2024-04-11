@@ -10,6 +10,7 @@ namespace UserMicroservice.Utils
         public Mapper()
         {
             CreateMap<Game, GameDto>();
+            CreateMap<AddMessageDto, ChatMessage>();
         }
     }
 }

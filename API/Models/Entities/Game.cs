@@ -23,5 +23,6 @@ namespace API.Models.Entities
         public string Status { get; set; }
         public DateTime StartTime { get; set; }
         public bool IsPrivate { get; set; }
+        public ICollection<ChatMessage> ChatMessages { get; set; }
     }
 }
