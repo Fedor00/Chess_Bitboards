@@ -97,7 +97,6 @@ function Play() {
 
   const makeMove = async (from, to) => {
     await makeMoveApi(user, from, to)
-    // Consider dispatching an update action after making a move if necessary.
   }
 
   const handleCreatePrivate = async () => {

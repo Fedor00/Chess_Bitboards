@@ -27,7 +27,7 @@ namespace UserMicroservice.Data
             foreach (var user in users)
             {
                 Console.WriteLine(user);
-                user.UserName = user.UserName.ToLower();
+                user.UserName = user.UserName;
                 await userManager.CreateAsync(user, "TrashTalker00@");
                 await userManager.AddToRoleAsync(user, "User");
             }

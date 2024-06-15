@@ -27,7 +27,6 @@ function dragReducer(state, action) {
       return {
         ...state,
         isDragging: false,
-        selectedPiece: { i: null, j: null, piece: null },
       }
     case 'RESET':
       return initialState
@@ -72,8 +71,7 @@ export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
   )
   const handleDragEnd = useCallback(async () => {
     if (!state.isDragging || !chessBoardRef.current) return
-    dispatch({ type: 'END_DRAG' })
-    dispatch({ type: 'RESET' })
+
     const { left, top, width } = chessBoardRef.current.getBoundingClientRect()
     const tileWidth = width / game.pieces[0].length
     const newRowIndex = Math.floor((state.mousePosition.y - top) / tileWidth)
@@ -82,6 +80,7 @@ export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
       state.selectedPiece.i,
       state.selectedPiece.j,
     )
+
     const toIndex = getChessBoardIndex(newRowIndex, newColIndex)
     if (!isOutOfBounds(newRowIndex, newColIndex)) {
       try {
@@ -95,6 +94,8 @@ export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
         console.log('error')
       }
     }
+    dispatch({ type: 'END_DRAG' })
+    dispatch({ type: 'RESET' })
   }, [
     state.isDragging,
     state.mousePosition.y,

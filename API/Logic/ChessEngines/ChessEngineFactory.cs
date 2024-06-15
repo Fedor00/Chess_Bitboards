@@ -16,6 +16,8 @@ namespace API.Logic.ChessEngines
                     return new StockfishEngine();
                 case DummyEngineName:
                     return new DummyEngine();
+                case FedorEngineName:
+                    return new FedorChessEngine();
                 default:
                     throw new ArgumentException("Unsupported engine ID", nameof(engineName));
             }

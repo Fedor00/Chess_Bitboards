@@ -34,6 +34,12 @@ function ChessPlayOptions({
             >
               Play Against Dummy Ai
             </Button>
+            <Button
+              onClick={() => handlePlayAi('fedor')}
+              className="w-full py-8"
+            >
+              Play Against Fedor
+            </Button>
           </div>
         </div>
       ) : (

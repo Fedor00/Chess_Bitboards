@@ -9,7 +9,7 @@ function Message({ message, className }) {
     <div
       className={cn(
         className,
-        'cursor-pointer break-all rounded-lg  p-3 text-white ',
+        'flex cursor-pointer items-center break-all rounded-lg p-3 text-white',
       )}
     >
       <HoverCard openDelay={0} closeDelay={0}>

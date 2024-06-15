@@ -86,6 +86,7 @@ namespace API.Utils
         public static readonly string WhiteResign = "white-resigned";
         public static readonly string BlackResign = "black-resigned";
         public const string StockfishEngineName = "stockfish";
+        public const string FedorEngineName = "fedor";
         public const string DummyEngineName = "dummy";
 
 

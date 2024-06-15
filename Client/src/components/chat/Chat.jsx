@@ -17,7 +17,15 @@ import Messages from './Messages'
 function Chat({ chat, showChatSheet, setShowChatSheet, onSendMessage }) {
   const [newMessage, setNewMessage] = useState('')
   const { user } = useAuth()
-
+  const currentPlayerUsername =
+    chat?.firstPlayer?.id === user.id
+      ? chat?.firstPlayer.userName
+      : chat?.secondPlayer.userName
+  const opponentUsername = !chat?.secondPlayer
+    ? 'AI'
+    : chat?.firstPlayer?.id !== user.id
+      ? chat?.firstPlayer?.userName
+      : chat?.secondPlayer?.userName
   const endOfMessagesRef = useRef(null)
   const sendMessage = () => {
     if (newMessage) {
@@ -35,12 +43,12 @@ function Chat({ chat, showChatSheet, setShowChatSheet, onSendMessage }) {
         <SheetHeader>
           <SheetTitle className="text-center">Chat</SheetTitle>
         </SheetHeader>
+
         <div className="flex justify-between ">
-          <PlayerName name={chat?.firstPlayer?.userName} />
-          <PlayerName
-            name={chat?.secondPlayer ? chat.secondPlayer.userName : 'Engine'}
-          />
+          <PlayerName name={opponentUsername} />
+          <PlayerName name={currentPlayerUsername} />
         </div>
+
         <div className="overflow-y-auto rounded-lg ">
           <div className="rounded-lg bg-stone-600">
             <div className="p-1">
@@ -58,6 +66,12 @@ function Chat({ chat, showChatSheet, setShowChatSheet, onSendMessage }) {
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
               className="mr-2 flex-1"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  sendMessage()
+                  e.preventDefault()
+                }
+              }}
             />
             <Button onClick={sendMessage}>
               <FiSend />
