@@ -8,7 +8,7 @@ namespace API.Logic.ChessEngines
 {
     public class DummyEngine : IChessEngine
     {
-        public Task<string> GetBestMoveAsync(string fen)
+        public Task<string> GetBestMoveAsync(string fen, int depth)
         {
             Board board = new Board(fen);
             int moveCount = 0;

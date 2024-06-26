@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getPathForPiece } from '../../services/Utils'
 import PlayerName from './PlayerName'
@@ -12,10 +12,14 @@ import { FaComments, FaFlag } from 'react-icons/fa'
 import Board from './Board'
 import useChat from '@/hooks/useChat'
 import Chat from '../chat/Chat'
+import ShowTextModal from '../ShowTextModal'
+import { GameActionTypes } from '@/reducers/useGameReducer'
 function ChessBoard({ game, makeMove, resign }) {
   const chessBoardRef = useRef(null)
   const { user } = useAuth()
+  const [showCode, setShowCode] = useState(false)
   const myDivRef = useRef(null)
+  console.log(game)
   const { playerColor, opponentUsername } = useChessBoardUtils(user, game)
   const { isDragging, imgSize, mousePosition, selectedPiece, handleDragStart } =
     useDragPiece(game, chessBoardRef, makeMove, playerColor)
@@ -45,7 +49,7 @@ function ChessBoard({ game, makeMove, resign }) {
               <Button onClick={resign}>
                 <FaFlag color="red" />
               </Button>
-
+              <Button onClick={() => setShowCode(true)}>Game Id</Button>
               <div className="relative">
                 {unseenMessages > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-3 w-3">
@@ -102,6 +106,11 @@ function ChessBoard({ game, makeMove, resign }) {
           setShowChatSheet={setShowChat}
         />
       )}
+      <ShowTextModal
+        showModal={showCode}
+        setShowModal={setShowCode}
+        text={game?.id}
+      />
     </>
   )
 }

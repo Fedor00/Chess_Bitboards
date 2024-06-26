@@ -87,6 +87,7 @@ namespace API.Services
             var engine = await _chessEngineRepository.GetChessEngineByNameAsync(createGameDto.EngineName);
             if (engine == null) throw new ArgumentException("Engine not found.");
             if (firstUser == null) throw new ArgumentException("User not found.");
+            if (createGameDto.Depth < 1 || createGameDto.Depth > 20) createGameDto.Depth = 4;
             var game = new Game
             {
                 FirstPlayerId = playerId,
@@ -96,6 +97,7 @@ namespace API.Services
                 Fen = INITIAL_FEN,
                 StartTime = DateTime.UtcNow,
                 IsPrivate = true,
+                EngineDepth = createGameDto.Depth
             };
             await _gameRepository.AddGameAsync(game);
             game.Engine = engine;

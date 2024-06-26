@@ -19,12 +19,11 @@ import GameOverModal from './GameOverModal'
 import ChessBoard from './ChessBoard'
 import useGameReducer, { GameActionTypes } from '../../reducers/useGameReducer'
 import useChessBoardUtils from '../../hooks/useChessBoardUtils'
-
 function Play() {
   const { user } = useAuth()
   const { state: gameState, dispatch } = useGameReducer()
   const { playerColor } = useChessBoardUtils(user, gameState.game)
-  const { connection } = useChessSignal()
+
   const processGameUpdate = useCallback(
     (gameData) => {
       let updatedGame = { ...gameData }
@@ -43,6 +42,7 @@ function Play() {
     },
     [dispatch, playerColor],
   )
+  const { connection } = useChessSignal()
   const handleMoveMade = useCallback(
     (moveData) => {
       if (!moveData) return
@@ -62,14 +62,14 @@ function Play() {
   )
   useEffect(() => {
     const setupSignalRListeners = () => {
-      connection.on('MoveMade', (moveData) => {
-        console.log(moveData)
-        handleMoveMade(moveData)
-      })
       connection.on('GameStarted', (gameData) => {
         processGameUpdate(gameData)
 
         playAudio(new Audio(`${CHESS_SOUNDS}/notify.mp3`))
+      })
+      connection.on('MoveMade', (moveData) => {
+        console.log(moveData)
+        handleMoveMade(moveData)
       })
       connection.on('GameResigned', (gameStatus) => {
         dispatch({ type: GameActionTypes.GAME_OVER, payload: gameStatus })
@@ -108,23 +108,27 @@ function Play() {
   }
 
   const handleJoinPrivate = async (gameId) => {
-    const gameData = await joinPrivateGame(user, gameId)
-    if (gameData) processGameUpdate(gameData)
+    try {
+      const gameData = await joinPrivateGame(user, gameId)
+      if (gameData) processGameUpdate(gameData)
+    } catch (error) {
+      alert('Id not found')
+    }
   }
 
   const handlePlayRandom = async () => {
     const gameData = await matchGameApi(user, false)
-    if (gameData) processGameUpdate(gameData)
+    if (gameData) await processGameUpdate(gameData)
   }
 
   const resign = async () => {
     await resignGameApi(user)
     //dispatch({ type: 'GAME_OVER' })
   }
-  const handlePlayAi = async (engineName) => {
-    const gameData = await createEngineGame(user, engineName)
+  const handlePlayAi = async (engineName, depth) => {
+    const gameData = await createEngineGame(user, engineName, depth)
     if (gameData) {
-      if (gameData.isFirstPlayerWhite) processGameUpdate(gameData)
+      await processGameUpdate(gameData)
     }
   }
   return (

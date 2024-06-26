@@ -8,5 +8,6 @@ namespace API.Models.Dtos
     public class CreateEngineGameDto
     {
         public string EngineName { get; set; }
+        public int Depth { get; set; }
     }
 }

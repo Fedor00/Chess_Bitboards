@@ -69,11 +69,11 @@ const createPrivateGame = async (user, isPrivate) => {
     throw new Error(error?.response?.data)
   }
 }
-const createEngineGame = async (user, engineName) => {
+const createEngineGame = async (user, engineName, depth = 5) => {
   try {
     const resp = await axios.post(
       `${GAME_API_URL}/create-engine-game`,
-      { engineName },
+      { engineName, depth },
       {
         headers: {
           'Content-Type': 'application/json',

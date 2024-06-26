@@ -236,6 +236,7 @@ namespace API.Logic
             return 1;
 
         }
+
         private void GenerateCastlingMoves(int[] moves, ref int moveCount)
         {
             if (Side == White)

@@ -25,14 +25,15 @@ namespace API.Logic.ChessEngines
             };
             _stockfishProcess.Start();
         }
-        public Task<string> GetBestMoveAsync(string fen)
+        public Task<string> GetBestMoveAsync(string fen, int depth)
         {
             if (!_stockfishProcess.StartInfo.FileName.EndsWith("exe") || !_stockfishProcess.Start())
             {
                 throw new InvalidOperationException("Failed to start Stockfish process.");
             }
             _stockfishProcess.StandardInput.WriteLine($"position fen {fen}");
-            _stockfishProcess.StandardInput.WriteLine("go depth 18");
+            _stockfishProcess.StandardInput.WriteLine($"go depth {depth}");
+            Console.WriteLine($"go depth {depth}");
 
             string output;
             string bestMoveLine = "bestmove";

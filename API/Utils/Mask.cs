@@ -16,12 +16,17 @@ namespace API.Utils
             InitializeRankMasks();
             InitializeFileMasks();
             InitialzePawnMoves();
+            InitializeIsolatedPawnMasks();
+            InitializePassedPawnMasks();
         }
+        public static ulong[] WhitePassedPawnMasks = new ulong[64];
+        public static ulong[] BlackPassedPawnMasks = new ulong[64];
+        public static ulong[] IsolatedPawnMask = new ulong[64];
         public static readonly ulong[][] PawnAttacks = new ulong[2][];
         public static readonly ulong[][] PawnSingleMoves = new ulong[2][];
         public static readonly ulong[][] PawnDoubleMoves = new ulong[2][];
-        public static ulong[] RankMask = new ulong[8];
-        public static ulong[] FileMask = new ulong[8];
+        public static ulong[] RankMask = new ulong[64];
+        public static ulong[] FileMask = new ulong[64];
         public static readonly ulong[][] Path = new ulong[64][];
 
         public static readonly ulong[] FullRookMasks = new ulong[64];
@@ -42,7 +47,31 @@ namespace API.Utils
             InitializeBlackPawnAttacks();
 
         }
+        private static void InitializeIsolatedPawnMasks()
+        {
+            for (int square = 0; square < 64; square++)
+            {
+                int rank = square / 8;
+                int file = square % 8;
+                ulong mask = 0UL;
+                if (file > 0)
+                {
+                    for (int r = 0; r < 8; r++)
+                    {
+                        mask |= 1UL << (r * 8 + file - 1);
+                    }
+                }
+                if (file < 7)
+                {
+                    for (int r = 0; r < 8; r++)
+                    {
+                        mask |= 1UL << (r * 8 + file + 1);
+                    }
+                }
 
+                IsolatedPawnMask[square] = mask;
+            }
+        }
         private static void InitializeRankMasks()
         {
             for (int rank = 0; rank < 8; rank++)
@@ -53,9 +82,51 @@ namespace API.Utils
                     int bitPosition = rank * 8 + file;
                     mask |= 1UL << bitPosition;
                 }
-                RankMask[rank] = mask;
+                for (int file = 0; file < 8; file++)
+                {
+                    RankMask[rank * 8 + file] = mask;
+                }
             }
         }
+        private static void InitializePassedPawnMasks()
+        {
+            for (int square = 0; square < 64; square++)
+            {
+                int rank = square / 8;  // Calculates the rank from 0 (a8) to 7 (a1)
+                int file = square % 8;
+
+                ulong whiteMask = 0UL;
+                ulong blackMask = 0UL;
+
+                // Calculate masks for white passed pawns (moving upwards from a1 to a8)
+                for (int r = rank + 1; r < 8; r++)
+                {
+                    int currentSquare = r * 8 + file;
+                    whiteMask |= 1UL << currentSquare;  // Current file ahead for white
+
+                    if (file > 0)  // Left adjacent file (from white's perspective)
+                        whiteMask |= 1UL << (currentSquare - 1);
+                    if (file < 7)  // Right adjacent file
+                        whiteMask |= 1UL << (currentSquare + 1);
+                }
+
+                // Calculate masks for black passed pawns (moving downwards from h8 to h1)
+                for (int r = rank - 1; r >= 0; r--)
+                {
+                    int currentSquare = r * 8 + file;
+                    blackMask |= 1UL << currentSquare;  // Current file behind for black
+
+                    if (file > 0)  // Left adjacent file (from black's perspective)
+                        blackMask |= 1UL << (currentSquare - 1);
+                    if (file < 7)  // Right adjacent file
+                        blackMask |= 1UL << (currentSquare + 1);
+                }
+
+                WhitePassedPawnMasks[square] = whiteMask;
+                BlackPassedPawnMasks[square] = blackMask;
+            }
+        }
+
         private static void InitializeFileMasks()
         {
             for (int file = 0; file < 8; file++)
@@ -63,12 +134,16 @@ namespace API.Utils
                 ulong mask = 0UL;
                 for (int rank = 0; rank < 8; rank++)
                 {
-                    int bitPosition = rank * 8 + file; // Calculate the correct bit position
-                    mask |= 1UL << bitPosition; // Set the bit at the calculated position
+                    int bitPosition = rank * 8 + file;
+                    mask |= 1UL << bitPosition;
                 }
-                FileMask[file] = mask; // Store the mask for the current file
+                for (int rank = 0; rank < 8; rank++)
+                {
+                    FileMask[rank * 8 + file] = mask;
+                }
             }
         }
+
 
 
 

@@ -7,6 +7,6 @@ namespace API.Interfaces
 {
     public interface IChessEngine
     {
-        Task<string> GetBestMoveAsync(string fen);
+        Task<string> GetBestMoveAsync(string fen, int depth);
     }
 }

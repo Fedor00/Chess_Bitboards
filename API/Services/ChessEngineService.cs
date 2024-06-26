@@ -17,6 +17,7 @@ using System.Diagnostics;
 using DeviceMicroservice.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using API.Repository;
+using API.Logic.FedorChessEngine;
 namespace API.Services
 {
     public class ChessEngineService
@@ -64,14 +65,14 @@ namespace API.Services
         }
         public async Task MakeEngineMove(IChessEngine chessEngine, Game game, Board board)
         {
-            string move = chessEngine.GetBestMoveAsync(game.Fen).Result;
+            string move = chessEngine.GetBestMoveAsync(game.Fen, game.EngineDepth).Result;
             if (move == null) throw new InvalidOperationException("Engine could not find a move.");
             //parse the move from the engine given in format e2e4 or e7e8q
             TryParseMove(move, out int from, out int to, out int promotedPiece);
             //promted piece is always lower case, so adjust it for the other color
-            if (promotedPiece != 0)
-                promotedPiece = board.Side == Black ? promotedPiece : promotedPiece - 6;
+
             int moveCount = 0;
+
             int[] moves = board.GenerateLegalMoves(ref moveCount);
             //find the move in the list of legal moves
             int moveToMake = moves.SingleOrDefault(m =>
@@ -80,6 +81,7 @@ namespace API.Services
                     (promotedPiece == 0 || GetMovePromoted(m) == promotedPiece));
             //if the move is not found in the list of legal moves, throw an exception
             if (moveToMake == 0) throw new InvalidOperationException("Engine move is not legal.");
+
             board.MakeMove(moveToMake, AllMoves);
             game.Fen = Fen.UpdateFen(board);
             var bothSideMoves = board.GenerateMovesForBothSides();
@@ -96,7 +98,6 @@ namespace API.Services
             MoveDto moveDto = MapToDto.CreateMoveDto(gameDto, moveToMake, check, checkMate, stalemate, draw);
             //send the move to the client
             await _hubContext.Clients.User(game.FirstPlayerId.ToString()).SendAsync("MoveMade", moveDto);
-
             await _gameRepository.UpdateGame(game);
 
         }

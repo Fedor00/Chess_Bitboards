@@ -34,6 +34,7 @@ namespace API.Utils
         {
             bitboard &= ~(1UL << index);
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetLSBIndex(ulong bitboard)
         {
@@ -60,16 +61,16 @@ namespace API.Utils
             return move;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetMoveCaptured(int move) { return ((move & 0x0F000000) >> 24); }
+        public static int GetMoveCaptured(int move) { return (move & 0x0F000000) >> 24; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetMoveSource(int move) { return move & 0x3f; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetMoveTarget(int move) { return (move & 0xfc0) >> 6; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetMovePiece(int move) { return ((move & 0xf000) >> 12); }
+        public static int GetMovePiece(int move) { return (move & 0xf000) >> 12; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetMovePromoted(int move) { return ((move & 0xf0000) >> 16); }
+        public static int GetMovePromoted(int move) { return (move & 0xf0000) >> 16; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsMoveCapture(int move) { return (move & 0x100000) != 0; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,8 +79,29 @@ namespace API.Utils
         public static bool IsMoveEnpassant(int move) { return (move & 0x400000) != 0; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsMoveCastle(int move) { return (move & 0x800000) != 0; }
-        public static int GetRank(int square) { return square / 8; }
-        public static int GetFile(int square) { return square % 8; }
+        public static int[] GetRank = [
+            7, 7, 7, 7, 7, 7, 7, 7,
+            6, 6, 6, 6, 6, 6, 6, 6,
+            5, 5, 5, 5, 5, 5, 5, 5,
+            4, 4, 4, 4, 4, 4, 4, 4,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            2, 2, 2, 2, 2, 2, 2, 2,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        public static int[] GetFile = [
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0, 1, 2, 3, 4, 5, 6, 7
+        ];
+
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int EncodePin(int pinnedSquare, int pinningSquare)
         {
@@ -145,13 +167,13 @@ namespace API.Utils
             for (int i = 0; i < 8; i++)
             {
 
-                Console.Write((8 - i) + " ");
+                Console.Write(8 - i + " ");
 
                 for (int j = 0; j < 8; j++)
                 {
                     Console.Write(boardRepresentation[i][j] + " ");
                 }
-                Console.Write((8 - i) + " ");
+                Console.Write(8 - i + " ");
 
                 Console.WriteLine();
             }
