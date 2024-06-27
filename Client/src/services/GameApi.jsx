@@ -123,6 +123,21 @@ const resignGameApi = async (user) => {
     throw new Error(error?.response?.data)
   }
 }
+const deleteGameApi = async (user, gameId) => {
+  console.log('deleteGameApi', gameId)
+  try {
+    const resp = await axios.delete(`${GAME_API_URL}/delete-game/${gameId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${user?.token}`,
+      },
+    })
+    return resp.data
+  } catch (error) {
+    console.error(error?.response?.data)
+    throw new Error(error?.response?.data)
+  }
+}
 export {
   getCurrentGame,
   makeMoveApi,
@@ -131,4 +146,5 @@ export {
   joinPrivateGame,
   resignGameApi,
   createEngineGame,
+  deleteGameApi,
 }

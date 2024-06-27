@@ -17,7 +17,6 @@ namespace API.Logic.ChessEngines
             Board board = new Board(fen);
 
             var search = new Search();
-            Console.WriteLine("score=" + search.EvaluationScore(board));
             Console.WriteLine(search.SearchPosition(board, depth));
             Console.WriteLine("NMode: " + search.Nodes);
             return Task.FromResult(MoveToString(search.BestMove));

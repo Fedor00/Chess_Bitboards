@@ -11,6 +11,8 @@ using static API.Utils.Mask;
 using static API.Logic.Attacks;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Components.Web;
+using System.Security.Policy;
 namespace API.Logic
 {
 
@@ -26,10 +28,18 @@ namespace API.Logic
         public int Castle { get; set; }
         public int HalfMoveClock { get; set; }
         public int FullMoveNumber { get; set; }
+        public ulong[,] PieceKeys { get; set; }
+        public ulong SideKey { get; set; }
+        public ulong[] CastleKeys { get; set; }
+        public ulong[] EnpassantKeys { get; set; }
+        public ulong Hashkey { get; set; }
         public Board(string fen)
         {
+            Initialize();
             Fen.InitializeBoard(this, fen);
             InitializePiecePositions();
+            InitializeHashKeys();
+            Hashkey = GenerateHashKey();
         }
         public Board() { }
 
@@ -51,16 +61,21 @@ namespace API.Logic
                 SetBit(ref Bitboards[piece], target);
                 PiecePositions[target] = piece;
                 PiecePositions[source] = -1;
+                Hashkey ^= PieceKeys[piece, source] ^ PieceKeys[piece, target];
                 if (capture && !enpassant)
                 {
                     if (pieceCaptured != -1)
+                    {
                         ClearBit(ref Bitboards[pieceCaptured], target);
+                        Hashkey ^= PieceKeys[pieceCaptured, target];
+                    }
                 }
                 if (promotion != 0)
                 {
                     ClearBit(ref Bitboards[Side == White ? P : p], target);
                     SetBit(ref Bitboards[promotion], target);
                     PiecePositions[target] = promotion;
+                    Hashkey ^= PieceKeys[Side == White ? P : p, target] ^ PieceKeys[promotion, target];
                 }
                 else if (enpassant)
                 {
@@ -69,19 +84,23 @@ namespace API.Logic
                     {
                         ClearBit(ref Bitboards[p], target + 8);
                         PiecePositions[target + 8] = -1;
+                        Hashkey ^= PieceKeys[p, target + 8];
                     }
                     else
                     {
                         ClearBit(ref Bitboards[P], target - 8);
                         PiecePositions[target - 8] = -1;
+                        Hashkey ^= PieceKeys[P, target - 8];
                     }
                 }
+                if (Enpassant != None) Hashkey ^= EnpassantKeys[Enpassant];
                 PreviousEnpassant = Enpassant;
                 Enpassant = None;
                 //if double pawn push, set enpassant square
                 if (doublePawnPush)
                 {
                     Enpassant = Side == White ? target + 8 : target - 8;
+                    Hashkey ^= EnpassantKeys[Enpassant];
                 }
                 else if (castling)
                 {
@@ -92,34 +111,41 @@ namespace API.Logic
                             SetBit(ref Bitboards[R], d1);
                             PiecePositions[d1] = R;
                             PiecePositions[a1] = -1;
+                            Hashkey ^= PieceKeys[R, a1] ^ PieceKeys[R, d1];
+
                             break;
                         case g1: // white king side
                             ClearBit(ref Bitboards[R], h1);
                             SetBit(ref Bitboards[R], f1);
                             PiecePositions[f1] = R;
                             PiecePositions[h1] = -1;
+                            Hashkey ^= PieceKeys[R, h1] ^ PieceKeys[R, f1];
                             break;
                         case c8: // black queen side
                             ClearBit(ref Bitboards[r], a8);
                             SetBit(ref Bitboards[r], d8);
                             PiecePositions[d8] = r;
                             PiecePositions[a8] = -1;
+                            Hashkey ^= PieceKeys[r, a8] ^ PieceKeys[r, d8];
                             break;
                         case g8: // black king side
                             ClearBit(ref Bitboards[r], h8);
                             SetBit(ref Bitboards[r], f8);
                             PiecePositions[f8] = r;
                             PiecePositions[h8] = -1;
+                            Hashkey ^= PieceKeys[r, h8] ^ PieceKeys[r, f8];
                             break;
                     }
                 }
-
+                Hashkey ^= CastleKeys[Castle];
                 Castle &= CastlingRights[source] & CastlingRights[target];
+                Hashkey ^= CastleKeys[Castle];
                 UpdateOccupancy();
                 HalfMoveClock++;
                 if (Side == Black) FullMoveNumber++;
                 if (capture || piece == P || piece == p) HalfMoveClock = 0;
                 Side ^= 1;
+                Hashkey ^= SideKey;
             }
             else
             {
@@ -150,7 +176,6 @@ namespace API.Logic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int UnmakeMove(int move, int moveFlag)
         {
-
             if (moveFlag == AllMoves)
             {
                 int source = GetMoveSource(move);
@@ -905,6 +930,65 @@ namespace API.Logic
             Side ^= 1; // switch side back
             Enpassant = PreviousEnpassant;
             return [currentPlayerMoves, opponentMoves];
+        }
+        public void InitializeHashKeys()
+        {
+            for (int piece = P; piece <= n; piece++)
+            {
+                for (int square = 0; square < 64; square++)
+                {
+                    PieceKeys[piece, square] = Random64();
+                }
+            }
+            for (int i = 0; i < 16; i++)
+            {
+                CastleKeys[i] = Random64();
+            }
+            for (int i = 0; i < 64; i++)
+            {
+                EnpassantKeys[i] = Random64();
+            }
+            SideKey = Random64();
+        }
+        private void Initialize()
+        {
+            CastleKeys = new ulong[16];
+            EnpassantKeys = new ulong[64];
+            PieceKeys = new ulong[12, 64];
+
+        }
+        public ulong GenerateHashKey()
+        {
+            ulong hashKey = 0;
+            for (int piece = P; piece <= n; piece++)
+            {
+                ulong bitboard = Bitboards[piece];
+                while (bitboard != 0)
+                {
+                    int square = GetLSBIndex(bitboard);
+                    hashKey ^= PieceKeys[piece, square];
+                    ClearBit(ref bitboard, square);
+                }
+            }
+            hashKey ^= CastleKeys[Castle];
+            if (Enpassant != None)
+            {
+                hashKey ^= EnpassantKeys[Enpassant % 8];
+            }
+            if (Side == Black)
+            {
+                hashKey ^= SideKey;
+            }
+            return hashKey;
+        }
+        private ulong Random64()
+        {
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                byte[] bytes = new byte[8];
+                rng.GetBytes(bytes);
+                return BitConverter.ToUInt64(bytes, 0);
+            }
         }
     }
 }

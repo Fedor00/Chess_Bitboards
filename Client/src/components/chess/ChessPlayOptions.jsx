@@ -10,8 +10,8 @@ function ChessPlayOptions({
 }) {
   const [playFriend, setPlayFriend] = useState(false)
   const [gameId, setGameId] = useState('')
-  const [stockfishDepth, setStockfishDepth] = useState(5)
-  const [fedorDepth, setFedorDepth] = useState(5)
+  const [stockfishDepth, setStockfishDepth] = useState(7)
+  const [fedorDepth, setFedorDepth] = useState(7)
 
   return (
     <div className="flex h-[90vh] w-full justify-center">

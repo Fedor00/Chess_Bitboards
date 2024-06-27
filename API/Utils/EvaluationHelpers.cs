@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using static API.Utils.BitbboardUtils;
 namespace API.Utils
 {
     public class EvaluationHelpers
     {
+        public static int HashFlagExact = 0;
+        public static int HashFlagAlpha = 1;
+        public static int HashFlagBeta = 2;
         public static int[] MaterialScore = [
             100,   // White pawn 
             10000, // White king 
@@ -22,16 +26,17 @@ namespace API.Utils
             -300   // black knight
         ];
         public static int[] PawnScore =
-        [
-            90,  90,  90,  90,  90,  90,  90,  90,
-            30,  30,  30,  40,  40,  30,  30,  30,
-            20,  20,  20,  30,  30,  30,  20,  20,
-            10,  10,  10,  20,  20,  10,  10,  10,
-            5,   5,   10,  20,  20,   5,   5,   5,
-            0,   0,   0,   5,   5,    0,   0,   0,
-            0,   0,   0,  -10, -10,   0,   0,   0,
-            0,   0,   0,    0,   0,   0,   0,   0
-        ];
+        {
+            0,  10,  10,  10,  10,  10,  10,   0,
+            5,  10,  20,  30,  30,  20,  10,   5,
+            5,  10,  15,  20,  20,  15,  10,   5,
+            5,  10,  10,  20,  20,  10,  10,   5,
+            5,   5,  10,  20,  20,  10,   5,   5,
+            5,   0,   5,  10,  10,   5,   0,   5,
+            5,   5,   5,  -5,  -5,   5,   5,   5,
+            0,   0,   0,   0,   0,   0,   0,   0
+        };
+
 
         // knight positional score
         public static int[] KnightScore =
@@ -62,17 +67,17 @@ namespace API.Utils
 
         // rook positional score
         public static int[] RookScore =
-        [
-            50,  50,  50,  50,  50,  50,  50,  50,
-            50,  50,  50,  50,  50,  50,  50,  50,
-            0,   0,  10,  20,  20,  10,   0,   0,
-            0,   0,  10,  20,  20,  10,   0,   0,
-            0,   0,  10,  20,  20,  10,   0,   0,
-            0,   0,  10,  20,  20,  10,   0,   0,
-            0,   0,  10,  20,  20,  10,   0,   0,
-            0,   0,   0,  20,  20,   0,   0,   0
+        {
+            15,  15,  15,  15,  15,  15,  15,  15,
+            10,  10,  10,  10,  10,  10,  10,  10,
+            5,   5,  10,  15,  15,  10,   5,   5,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            5,   5,  10,  20,  20,  10,   5,   5,
+            10,  10,  10,  20,  20,  10,  10,  10
+        };
 
-        ];
 
         // king positional score
         public static int[] KingScore =
@@ -126,5 +131,8 @@ namespace API.Utils
         public static int OnOpenFileBonus = 15;
         public static int OnSemiOpenFileBonus = 10;
         public static int KingShieldBonus = 5;
+        public static int MateScore = 48000;
+        public static int MateValue = 49000;
+        public static int Infinity = 50000;
     }
 }

@@ -8,6 +8,7 @@ using static API.Utils.BitbboardUtils;
 using static API.Utils.EvaluationHelpers;
 using static API.Utils.Mask;
 using static API.Logic.Attacks;
+
 namespace API.Logic.FedorChessEngine
 {
     public class Search
@@ -15,14 +16,18 @@ namespace API.Logic.FedorChessEngine
         public const int FullDepthMoves = 4;
         public const int ReductionLimit = 3;
         public int Nodes { get; set; }
-        public int HalfMoves { get; set; }
+        public int Ply { get; set; }
         public int BestMove { get; set; }
         public int[,] KillerMoves { get; set; }
         public int[,] HistoryMoves { get; set; }
         public int[] PvLength { get; set; }
         public int[,] PvTable { get; set; }
+        public ulong[] RepetitionTable { get; set; }
+        public int RepetitionIndex { get; set; }
         public bool FollowPV { get; set; }
         public bool ScorePv { get; set; }
+
+        public TranspositionTable TranspositionTable { get; private set; }
 
         public Search()
         {
@@ -30,11 +35,14 @@ namespace API.Logic.FedorChessEngine
             HistoryMoves = new int[12, 64];
             PvLength = new int[128];
             PvTable = new int[128, 128];
+            RepetitionTable = new ulong[1000];
+
+            TranspositionTable = new TranspositionTable();
         }
         public int SearchPosition(Board board, int depth)
         {
             ClearHelperData();
-            int score = 0, alpha = -50000, beta = 50000;
+            int score = 0, alpha = -Infinity, beta = Infinity;
             // Iterative deepening
             for (int i = 1; i <= depth; i++)
             {
@@ -43,23 +51,32 @@ namespace API.Logic.FedorChessEngine
                 score = NegaMaxSearch(board, i, alpha, beta);
                 if ((score <= alpha) || (score >= beta))
                 {
-                    alpha = -50000;
-                    beta = 50000;
+                    alpha = -Infinity;
+                    beta = Infinity;
                     continue;
                 }
                 alpha = score - 50;
                 beta = score + 50;
                 Console.WriteLine(Nodes);
             }
+            for (int i = 0; i < PvLength[0]; i++)
+            {
+                Console.WriteLine(MoveToString(PvTable[0, i]));
+            }
             BestMove = PvTable[0, 0];
             return score;
+        }
+        private void UpdateRepetitionTable(ulong hashkey)
+        {
+            RepetitionIndex++;
+            RepetitionTable[RepetitionIndex] = hashkey;
         }
         private int Quiescence(Board board, int alpha, int beta)
         {
             Nodes++;
-            if (HalfMoves > 127)
-                return EvaluationScore(board);
-            int eval = EvaluationScore(board);
+            if (Ply > 127)
+                return Evaluation.EvaluatePosition(board);
+            int eval = Evaluation.EvaluatePosition(board);
             if (eval >= beta) return beta;
             if (alpha < eval) alpha = eval;
             int moveCount = 0;
@@ -68,126 +85,131 @@ namespace API.Logic.FedorChessEngine
             for (int count = 0; count < moveCount; count++)
             {
                 if (!IsMoveCapture(moves[count])) continue;
-                int castle = board.Castle;
+                int castle = board.Castle, halfMoveClock = board.HalfMoveClock;
+                ulong hashkey = board.Hashkey;
                 board.MakeMove(moves[count], AllMoves);
-
-                HalfMoves++;
+                Ply++;
+                UpdateRepetitionTable(board.Hashkey);
                 int score = -Quiescence(board, -beta, -alpha);
                 board.UnmakeMove(moves[count], AllMoves);
+                board.HalfMoveClock = halfMoveClock;
                 board.Castle = castle;
-                HalfMoves--;
+                board.Hashkey = hashkey;
+                Ply--;
+                RepetitionIndex--;
                 if (score > alpha)
                 {
                     alpha = score;
                     if (score >= beta) return beta;
                 }
             }
+
             return alpha;
+        }
+        private bool IsRepetition(ulong hashkey)
+        {
+            for (int i = 0; i < RepetitionIndex; i++)
+            {
+                if (RepetitionTable[i] == hashkey)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
         public int NegaMaxSearch(Board board, int depth, int alpha, int beta)
         {
-            PvLength[HalfMoves] = HalfMoves;
+
+            int hashFlag = HashFlagAlpha, score;
+            PvLength[Ply] = Ply;
+
+            if (Ply > 0 && IsRepetition(board.Hashkey) || board.HalfMoveClock >= 100) return 0;
+            if ((score = TranspositionTable.ReadHashEntry(alpha, beta, depth, board.Hashkey, Ply)) != int.MinValue)
+                return score;
             if (depth == 0) return Quiescence(board, alpha, beta);
-            if (HalfMoves > 127) return EvaluationScore(board);
+            if (Ply > 127) return Evaluation.EvaluatePosition(board);
             Nodes++;
             int moveCount = 0;
             int[] moves = board.GenerateLegalMoves(ref moveCount);
-            ulong kingBitboard = board.Bitboards[board.Side == White ? K : k];
-            bool KingInCheck = board.IsSquareAttacked(GetLSBIndex(kingBitboard), board.Side ^ 1);
-            if (!KingInCheck && depth >= 3 && HalfMoves > 0) // Null move pruning
-            {
+            bool kingInCheck = board.IsInCheck();
+            if (EligibleForNullMove(depth, kingInCheck, Ply))
+                if (NullMovePruning(board, depth, alpha, beta) >= beta) return beta; // Null move pruning
 
-                HalfMoves++;
-                board.Side ^= 1;
-                int castle = board.Castle;
-                int enpasant = board.Enpassant;
-                board.Enpassant = None;
-                int nullScore = -NegaMaxSearch(board, depth - 2 - 1, -beta, -beta + 1);
-                board.Side ^= 1;
-                board.Castle = castle;
-                board.Enpassant = enpasant;
-                HalfMoves--;
-                if (nullScore >= beta)
-                {
-                    return beta; // Prune the tree
-                }
-            }
-            if (KingInCheck) depth++;
+            if (kingInCheck) depth++; // Check extension
             if (FollowPV) EnablePVScore(moves, moveCount);
             SortMoves(moves, moveCount);
             int movesSearched = 0;
             for (int count = 0; count < moveCount; count++)
             {
-                int castle = board.Castle;
+                int castle = board.Castle, halfMoveClock = board.HalfMoveClock;
+                ulong hashkey = board.Hashkey;
+                //Console.WriteLine();
+                //Console.WriteLine(board.Hashkey);
                 board.MakeMove(moves[count], AllMoves);
-                HalfMoves++;
-                int score;
+                Ply++;
+                UpdateRepetitionTable(board.Hashkey);
                 if (movesSearched == 0)
                     score = -NegaMaxSearch(board, depth - 1, -beta, -alpha);
                 else
                 {
                     // Late move reduction condition
-                    if (movesSearched >= FullDepthMoves
-                        && depth >= ReductionLimit
-                        && !KingInCheck
-                        && !IsMoveCapture(moves[count])
-                        && GetMovePromoted(moves[count]) == 0)
-                    {
+                    if (EligibleForLateMoveReduction(moves[count], movesSearched, depth, kingInCheck))
                         score = -NegaMaxSearch(board, depth - 2, -alpha - 1, -alpha);
-                    }
                     else
-                    {
                         score = alpha + 1;
-                    }
                     //Principal Variation Search
                     if (score > alpha)
-                    {
-                        score = -NegaMaxSearch(board, depth - 1, -alpha - 1, -alpha);
-                        if (score > alpha && score < beta)
-                        {
-                            score = -NegaMaxSearch(board, depth - 1, -beta, -alpha);
-                        }
-                    }
+                        score = PVSearch(board, depth, alpha, beta);
                 }
                 board.UnmakeMove(moves[count], AllMoves);
+                board.HalfMoveClock = halfMoveClock;
+                board.Hashkey = hashkey;
                 board.Castle = castle;
-                HalfMoves--;
+                //Console.WriteLine(board.Hashkey);
+                Ply--;
+                RepetitionIndex--;
                 movesSearched++;
                 if (score >= beta)
                 {
+                    TranspositionTable.Store(board.Hashkey, moves[count], depth, score, HashFlagBeta, Ply);
                     if (!IsMoveCapture(moves[count]))
                     {
-                        KillerMoves[1, HalfMoves] = KillerMoves[0, HalfMoves];
-                        KillerMoves[0, HalfMoves] = moves[count];
+                        KillerMoves[1, Ply] = KillerMoves[0, Ply];
+                        KillerMoves[0, Ply] = moves[count];
                     }
                     return beta;
                 }
                 if (score > alpha)
                 {
+                    hashFlag = HashFlagExact;
                     HistoryMoves[GetMovePiece(moves[count]), GetMoveTarget(moves[count])] += depth;
                     alpha = score;
-                    PvTable[HalfMoves, HalfMoves] = moves[count];
-                    for (int next = HalfMoves + 1; next < PvLength[HalfMoves + 1]; next++)
+                    PvTable[Ply, Ply] = moves[count];
+                    for (int next = Ply + 1; next < PvLength[Ply + 1]; next++)
                     {
-                        PvTable[HalfMoves, next] = PvTable[HalfMoves + 1, next];
+                        PvTable[Ply, next] = PvTable[Ply + 1, next];
                     }
-                    PvLength[HalfMoves] = PvLength[HalfMoves + 1];
+                    PvLength[Ply] = PvLength[Ply + 1];
                 }
             }
             if (moveCount == 0)
             {
-                if (KingInCheck) return -49000 + HalfMoves;
+                if (kingInCheck) return -MateValue + Ply;
                 else return 0;
             }
+            TranspositionTable.Store(board.Hashkey, PvTable[Ply, Ply], depth, alpha, hashFlag, Ply);
 
             return alpha;
+
+
+
         }
         public void EnablePVScore(int[] moves, int moveCount)
         {
             FollowPV = false;
             for (int count = 0; count < moveCount; count++)
             {
-                if (moves[count] == PvTable[0, HalfMoves])
+                if (moves[count] == PvTable[0, Ply])
                 {
                     FollowPV = true;
                     ScorePv = true;
@@ -198,128 +220,36 @@ namespace API.Logic.FedorChessEngine
         }
         public void SortMoves(int[] moves, int moveCount)
         {
-            var scoredMoves = new List<(int move, int score)>();
-            for (int i = 0; i < moveCount; i++)
+            try
             {
-                int score = ScoreMove(moves[i]);
-                scoredMoves.Add((moves[i], score));
-            }
-
-            scoredMoves.Sort((a, b) => b.score.CompareTo(a.score));
-
-            for (int i = 0; i < moveCount; i++)
-            {
-                moves[i] = scoredMoves[i].move;
-            }
-
-        }
-
-        public int EvaluationScore(Board board)
-        {
-            int score = 0;
-            ulong bitboard;
-            int piece, square, bits;
-            for (int i = P; i <= n; i++)
-            {
-                bitboard = board.Bitboards[i];
-                while (bitboard != 0)
+                var scoredMoves = new List<(int move, int score)>();
+                for (int i = 0; i < moveCount; i++)
                 {
-                    piece = i;
-                    square = GetLSBIndex(bitboard);
+                    int score = ScoreMove(moves[i]);
+                    scoredMoves.Add((moves[i], score));
+                }
 
-                    score += MaterialScore[piece];
-                    switch (piece)
-                    {
-                        case P:
-                            bits = BitOperations.PopCount(board.Bitboards[P] & FileMask[square]);
-                            // Double pawn penalty and pawn positional score
-                            score += PawnScore[square];
-                            if (bits > 1)
-                                score += bits * DoublePawnPenalty;
-                            // Passed pawn bonus
-                            if ((board.Bitboards[P] & IsolatedPawnMask[square]) == 0)
-                                score += IsolatedPawnPenalty;
-                            if ((board.Bitboards[p] & WhitePassedPawnMasks[square]) == 0)
-                                score += PassedPawnBonus[GetRank[square]];
-                            break;
-                        case N:
-                            score += KnightScore[square]; break;
-                        case B:
-                            score += BishopScore[square];
-                            score += BitOperations.PopCount(GetBishopAttacks(square, board.Occuppancy[Both]));
-                            break;
-                        case R:
-                            score += RookScore[square];
-                            if ((board.Bitboards[P] & FileMask[square]) == 0)
-                                score += OnSemiOpenFileBonus;
-                            if (((board.Bitboards[P] | board.Bitboards[p]) & FileMask[square]) == 0)
-                                score += OnOpenFileBonus;
-                            break;
-                        case Q:
-                            score += BitOperations.PopCount(GetRookAttacks(square, board.Occuppancy[Both]));
-                            score += BitOperations.PopCount(GetBishopAttacks(square, board.Occuppancy[Both]));
-                            break;
-                        case K:
-                            score += KingScore[square];
-                            if ((board.Bitboards[P] & FileMask[square]) == 0)
-                                score -= OnSemiOpenFileBonus;
-                            if (((board.Bitboards[P] | board.Bitboards[p]) & FileMask[square]) == 0)
-                                score -= OnOpenFileBonus;
-                            score += BitOperations.PopCount(KingMasks[square] & board.Occuppancy[White]) * KingShieldBonus;
-                            break;
-                        case p:
-                            bits = BitOperations.PopCount(board.Bitboards[p] & FileMask[square]);
-                            // Double pawn penalty and pawn positional score
-                            score -= PawnScore[MirrorScore[square]];
-                            if (bits > 1)
-                                score -= bits * DoublePawnPenalty;
-                            // Passed pawn bonus
-                            if ((board.Bitboards[P] & BlackPassedPawnMasks[square]) == 0)
-                                score -= PassedPawnBonus[GetRank[MirrorScore[square]]];
-                            // Isolated pawn penalty
-                            if ((board.Bitboards[p] & IsolatedPawnMask[square]) == 0)
-                                score -= IsolatedPawnPenalty;
+                scoredMoves.Sort((a, b) => b.score.CompareTo(a.score));
 
-                            break;
-                        case n:
-                            score -= KnightScore[MirrorScore[square]]; break;
-                        case b:
-                            score -= BishopScore[MirrorScore[square]];
-                            score -= BitOperations.PopCount(GetBishopAttacks(square, board.Occuppancy[Both]));
-                            break;
-                        case r:
-                            score -= RookScore[MirrorScore[square]];
-                            if ((board.Bitboards[p] & FileMask[square]) == 0)
-                                score -= OnSemiOpenFileBonus;
-                            if (((board.Bitboards[P] | board.Bitboards[p]) & FileMask[square]) == 0)
-                                score -= OnOpenFileBonus;
-                            break;
-                        case q:
-                            score += BitOperations.PopCount(GetRookAttacks(square, board.Occuppancy[Both]));
-                            score += BitOperations.PopCount(GetBishopAttacks(square, board.Occuppancy[Both]));
-                            break;
-                        case k:
-                            score -= KingScore[MirrorScore[square]];
-                            if ((board.Bitboards[p] & FileMask[square]) == 0)
-                                score += OnSemiOpenFileBonus;
-                            if (((board.Bitboards[P] | board.Bitboards[p]) & FileMask[square]) == 0)
-                                score += OnOpenFileBonus;
-                            score -= BitOperations.PopCount(KingMasks[square] & board.Occuppancy[Black]) * KingShieldBonus;
-                            break;
-
-                    }
-
-                    ClearBit(ref bitboard, square);
+                for (int i = 0; i < moveCount; i++)
+                {
+                    moves[i] = scoredMoves[i].move;
                 }
             }
-            return board.Side == White ? score : -score;
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+
         }
+
         public int ScoreMove(int move)
         {
             if (ScorePv == true)
             {
                 ScorePv = false;
-                if (move == PvTable[0, HalfMoves]) return 20000;
+                if (move == PvTable[0, Ply]) return 20000;
             }
             if (IsMoveCapture(move))
             {
@@ -333,10 +263,54 @@ namespace API.Logic.FedorChessEngine
             }
             else
             {
-                if (KillerMoves[0, HalfMoves] == move) return 9000;
-                else if (KillerMoves[1, HalfMoves] == move) return 8000;
+                if (KillerMoves[0, Ply] == move) return 9000;
+                else if (KillerMoves[1, Ply] == move) return 8000;
                 else return HistoryMoves[GetMovePiece(move), GetMoveTarget(move)];
             }
+        }
+        private bool EligibleForNullMove(int depth, bool kingInCheck, int Ply)
+        {
+            return depth >= 3 && !kingInCheck && Ply > 0;
+        }
+        private bool EligibleForLateMoveReduction(int move, int movesSearched, int depth, bool kingInCheck)
+        {
+            return movesSearched >= FullDepthMoves
+                        && depth >= ReductionLimit
+                        && !kingInCheck
+                        && !IsMoveCapture(move)
+                        && GetMovePromoted(move) == 0;
+
+        }
+        private int PVSearch(Board board, int depth, int alpha, int beta)
+        {
+            int score = -NegaMaxSearch(board, depth - 1, -alpha - 1, -alpha);
+            if (score > alpha && score < beta)
+            {
+                score = -NegaMaxSearch(board, depth - 1, -beta, -alpha);
+            }
+            return score;
+
+        }
+        private int NullMovePruning(Board board, int depth, int alpha, int beta)
+        {
+            ulong hashkey = board.Hashkey;
+            Ply++;
+            UpdateRepetitionTable(board.Hashkey);
+            board.Side ^= 1;
+            int castle = board.Castle;
+            int enpasant = board.Enpassant;
+            if (board.Enpassant != None)
+                board.Hashkey ^= board.EnpassantKeys[board.Enpassant];
+            board.Hashkey ^= board.SideKey;
+            board.Enpassant = None;
+            int nullScore = -NegaMaxSearch(board, depth - 2 - 1, -beta, -beta + 1);
+            board.Side ^= 1;
+            board.Castle = castle;
+            board.Enpassant = enpasant;
+            Ply--;
+            RepetitionIndex--;
+            board.Hashkey = hashkey;
+            return nullScore;
         }
         private void ClearHelperData()
         {
@@ -344,8 +318,10 @@ namespace API.Logic.FedorChessEngine
             Array.Clear(HistoryMoves, 0, HistoryMoves.Length);
             Array.Clear(PvLength, 0, PvLength.Length);
             Array.Clear(PvTable, 0, PvTable.Length);
+            Array.Clear(RepetitionTable, 0, RepetitionTable.Length);
             Nodes = 0;
-            HalfMoves = 0;
+            Ply = 0;
+            RepetitionIndex = 1;
             BestMove = 0;
             FollowPV = false;
             ScorePv = false;

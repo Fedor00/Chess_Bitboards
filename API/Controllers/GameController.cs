@@ -66,13 +66,14 @@ namespace API.Controllers
             return Ok(gameDto);
         }
 
-        [HttpDelete("delete-game")]
+        [HttpDelete("delete-game/{gameId}")]
         public async Task<ActionResult> DeleteGame(string gameId)
         {
             long userId = GetUserId();
             await _gameService.DeleteGame(gameId);
             return Ok();
         }
+
         [HttpPut("resign-game")]
         public async Task<ActionResult> ResignGame()
         {
@@ -95,6 +96,7 @@ namespace API.Controllers
         {
             return long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         }
+
 
     }
 }

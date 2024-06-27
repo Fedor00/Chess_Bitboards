@@ -8,13 +8,12 @@ import { useDragPiece } from '../../hooks/useDragPiece'
 import { useHighlightMoves } from '../../hooks/useHighlightMoves'
 import useChessBoardUtils from '../../hooks/useChessBoardUtils'
 import { Button } from '../ui/button'
-import { FaComments, FaFlag } from 'react-icons/fa'
+import { FaComments, FaFlag, FaTimes } from 'react-icons/fa'
 import Board from './Board'
 import useChat from '@/hooks/useChat'
 import Chat from '../chat/Chat'
 import ShowTextModal from '../ShowTextModal'
-import { GameActionTypes } from '@/reducers/useGameReducer'
-function ChessBoard({ game, makeMove, resign }) {
+function ChessBoard({ game, makeMove, resign, cancelGame }) {
   const chessBoardRef = useRef(null)
   const { user } = useAuth()
   const [showCode, setShowCode] = useState(false)
@@ -61,6 +60,11 @@ function ChessBoard({ game, makeMove, resign }) {
                   <FaComments color="#add8e6" />
                 </Button>
               </div>
+              {!opponentUsername && (
+                <Button onClick={cancelGame}>
+                  <FaTimes color="#add8e6" />
+                </Button>
+              )}
             </div>
             {opponentUsername ? (
               <PlayerName name={opponentUsername} />

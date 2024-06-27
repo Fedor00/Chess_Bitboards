@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import {
   createEngineGame,
   createPrivateGame,
+  deleteGameApi,
   getCurrentGame,
   joinPrivateGame,
   makeMoveApi,
@@ -131,10 +132,23 @@ function Play() {
       await processGameUpdate(gameData)
     }
   }
+  const cancelGame = async () => {
+    try {
+      await deleteGameApi(user, gameState?.game?.id)
+      dispatch({ type: GameActionTypes.RESET_GAME })
+    } catch (error) {
+      alert('Error cancelling game')
+    }
+  }
   return (
     <>
       {gameState.game && (
-        <ChessBoard game={gameState.game} makeMove={makeMove} resign={resign} />
+        <ChessBoard
+          game={gameState.game}
+          makeMove={makeMove}
+          resign={resign}
+          cancelGame={cancelGame}
+        />
       )}
       {!gameState.game && (
         <ChessPlayOptions
