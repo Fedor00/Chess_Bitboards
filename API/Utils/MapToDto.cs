@@ -25,7 +25,7 @@ namespace API.Services
             };
 
         }
-        public static GameDto CreateGameDto(Game game, Board board, IEnumerable<Move> currentPlayerMoves, IEnumerable<Move> opponentMoves)
+        public static GameDto CreateGameDto(Game game, Board board, IEnumerable<Move> currentPlayerMoves, IEnumerable<Move> opponentMoves, Move move = null)
         {
             return new GameDto
             {
@@ -41,6 +41,7 @@ namespace API.Services
                 FullMoveNumber = board.FullMoveNumber,
                 Engine = game.Engine,
                 Status = game.Status,
+                Move = move
             };
         }
     }

@@ -34,6 +34,11 @@ function Play() {
           ...updatedGame,
           pieces: flipPieces(updatedGame.pieces),
           blackMoves: flipMoves(updatedGame.blackMoves),
+          move: {
+            ...updatedGame.move,
+            from: 63 - updatedGame?.move?.from,
+            to: 63 - updatedGame?.move?.to,
+          },
         }
       }
       dispatch({
@@ -96,8 +101,8 @@ function Play() {
     if (user) fetchGame()
   }, [user, dispatch, processGameUpdate])
 
-  const makeMove = async (from, to) => {
-    await makeMoveApi(user, from, to)
+  const makeMove = async (from, to, promotionPiece) => {
+    await makeMoveApi(user, from, to, promotionPiece)
   }
 
   const handleCreatePrivate = async () => {

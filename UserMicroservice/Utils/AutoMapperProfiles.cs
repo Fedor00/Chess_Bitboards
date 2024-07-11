@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using UserMicroservice.DTOs;
 using UserMicroservice.Entities;
-
 namespace UserMicroservice.Utils
 {
     public class AutoMapperProfiles : Profile

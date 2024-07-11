@@ -1,11 +1,12 @@
 export const MIDNIGHT_PATH = './images/midnight'
+export const BLACK_WHITE_PATH = './images/dark-white'
 export const CHESS_SOUNDS = './chess-sound-effects'
-export const ACCOUNT_API_URL = 'http://localhost:5195/api/account'
-export const GAME_API_URL = 'http://localhost:5280/api/game'
-export const STOCKFISH_API_URL = 'http://localhost:5280/api/stockfish'
-export const CHESS_HUB_URL = 'http://localhost:5280/chess-hub'
-export const USER_API_URL = 'http://localhost:5195/api/users'
-export const CHAT_API_URL = 'http://localhost:5280/api/chat'
+export const ACCOUNT_API_URL = 'http://192.168.0.150:5195/api/account'
+export const GAME_API_URL = 'http://192.168.0.150:5280/api/game'
+export const STOCKFISH_API_URL = 'http://192.168.0.150:5280/api/stockfish'
+export const CHESS_HUB_URL = 'http://192.168.0.150:5280/chess-hub'
+export const USER_API_URL = 'http://192.168.0.150:5195/api/users'
+export const CHAT_API_URL = 'http://192.168.0.150:5280/api/chat'
 
 export const DEFAULT_PIECES = [
   [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ' '],

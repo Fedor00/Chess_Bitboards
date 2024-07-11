@@ -7,7 +7,6 @@ import {
 
 export function useHighlightMoves(game, playerColor, selectedPiece) {
   const [highlightedMoves, setHighlightedMoves] = useState([])
-  console.log('highlightedMoves', highlightedMoves)
   useEffect(() => {
     const highlightMoves = () => {
       const movesHighlight = Array.from({ length: 8 }, () =>
@@ -17,8 +16,6 @@ export function useHighlightMoves(game, playerColor, selectedPiece) {
       if (selectedPiece?.i !== null && selectedPiece.piece !== 'X') {
         if (isOutOfBounds(selectedPiece.i, selectedPiece.j)) return
         const fromIndex = getChessBoardIndex(selectedPiece.i, selectedPiece.j)
-        console.log(fromIndex)
-        console.log(selectedPiece)
         const validMoves = game[`${playerColor}Moves`]
         validMoves.forEach((move) => {
           if (move.from === fromIndex) {

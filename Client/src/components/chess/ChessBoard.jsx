@@ -13,15 +13,45 @@ import Board from './Board'
 import useChat from '@/hooks/useChat'
 import Chat from '../chat/Chat'
 import ShowTextModal from '../ShowTextModal'
+import PromotionPiece from './PromotionPiece'
 function ChessBoard({ game, makeMove, resign, cancelGame }) {
   const chessBoardRef = useRef(null)
   const { user } = useAuth()
+
   const [showCode, setShowCode] = useState(false)
+  const [showChoosePiece, setShowChoosePiece] = useState(false)
+  const [move, setMove] = useState(null)
   const myDivRef = useRef(null)
-  console.log(game)
-  const { playerColor, opponentUsername } = useChessBoardUtils(user, game)
+
+  useEffect(() => {
+    setMove(game.move)
+  }, [game])
+  const { playerColor, opponentUsername, isPromotionMove } = useChessBoardUtils(
+    user,
+    game,
+  )
+  const makeMoveWhenPromotion = async (piece) => {
+    console.log(move.from, move.to, piece)
+    await makeMove(move.from, move.to, piece)
+
+    setShowChoosePiece(false)
+  }
+
+  const doMove = async (from, to) => {
+    const isPromotion = isPromotionMove(from, to, selectedPiece.piece, game)
+
+    if (!isPromotion) {
+      await makeMove(from, to, 'X')
+
+      return
+    }
+    setMove({ from, to })
+    setShowChoosePiece(true)
+  }
+
   const { isDragging, imgSize, mousePosition, selectedPiece, handleDragStart } =
-    useDragPiece(game, chessBoardRef, makeMove, playerColor)
+    useDragPiece(game, chessBoardRef, doMove, playerColor)
+
   const { highlightedMoves } = useHighlightMoves(
     game,
     playerColor,
@@ -30,19 +60,40 @@ function ChessBoard({ game, makeMove, resign, cancelGame }) {
   const { chat, addMessage, showChat, setShowChat, unseenMessages } = useChat(
     game?.id,
   )
+
   useEffect(() => {
     if (myDivRef.current) {
       myDivRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [myDivRef])
+  useEffect(() => {
+    const preventDefault = (e) => e.preventDefault()
+
+    const chessBoardElement = chessBoardRef.current
+    if (chessBoardElement) {
+      chessBoardElement.addEventListener('touchstart', preventDefault, {
+        passive: false,
+      })
+      chessBoardElement.addEventListener('touchmove', preventDefault, {
+        passive: false,
+      })
+    }
+
+    return () => {
+      if (chessBoardElement) {
+        chessBoardElement.removeEventListener('touchstart', preventDefault)
+        chessBoardElement.removeEventListener('touchmove', preventDefault)
+      }
+    }
+  }, [])
   return (
     <>
       <div
-        className="mb-2 flex max-h-full flex-col items-center justify-center"
+        className="flex flex-col items-center justify-center max-h-full mb-2"
         ref={myDivRef}
       >
-        <div className="grid w-[calc(100vmin-3rem)] grid-rows-1">
-          <div className="flex w-full justify-between">
+        <div className="grid w-full grid-rows-1 items-center justify-center sm:w-[calc(100vmin-7rem)]">
+          <div className="flex justify-between w-full">
             <PlayerName name={user?.username} />
             <div className="flex space-x-1">
               <Button onClick={resign}>
@@ -51,9 +102,9 @@ function ChessBoard({ game, makeMove, resign, cancelGame }) {
               <Button onClick={() => setShowCode(true)}>Game Id</Button>
               <div className="relative">
                 {unseenMessages > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-sky-500"></span>
+                  <span className="absolute flex w-3 h-3 -right-1 -top-1">
+                    <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-sky-400"></span>
+                    <span className="relative inline-flex w-3 h-3 rounded-full bg-sky-500"></span>
                   </span>
                 )}
                 <Button onClick={() => setShowChat((current) => !current)}>
@@ -74,7 +125,7 @@ function ChessBoard({ game, makeMove, resign, cancelGame }) {
           </div>
 
           <div
-            className="grid cursor-grab grid-cols-8 active:cursor-grabbing"
+            className="grid grid-cols-8 cursor-grab active:cursor-grabbing"
             ref={chessBoardRef}
           >
             <Board
@@ -83,6 +134,7 @@ function ChessBoard({ game, makeMove, resign, cancelGame }) {
               selectedPiece={selectedPiece}
               handleDragStart={handleDragStart}
               color={playerColor}
+              move={move}
             />
           </div>
         </div>
@@ -102,18 +154,25 @@ function ChessBoard({ game, makeMove, resign, cancelGame }) {
           />
         )}
       </div>
-      {showChat && chat && (
+      {showChat && chat && opponentUsername && (
         <Chat
           chat={chat}
           onSendMessage={addMessage}
           showChatSheet={showChat}
           setShowChatSheet={setShowChat}
+          opponentUsername={opponentUsername}
         />
       )}
       <ShowTextModal
         showModal={showCode}
         setShowModal={setShowCode}
         text={game?.id}
+      />
+      <PromotionPiece
+        showModal={showChoosePiece}
+        setShowModal={setShowChoosePiece}
+        onChoosePiece={makeMoveWhenPromotion}
+        color={playerColor}
       />
     </>
   )
