@@ -17,8 +17,9 @@ namespace API.Logic.ChessEngines
             Board board = new Board(fen);
 
             var search = new Search();
+            //Board boardFen = new Board("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+            //Console.WriteLine("perf test" + search.Perftest(boardFen, 5));
             Console.WriteLine(search.SearchPosition(board, depth));
-            Console.WriteLine("NMode: " + search.Nodes);
             return Task.FromResult(MoveToString(search.BestMove));
         }
     }

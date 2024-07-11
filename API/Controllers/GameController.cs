@@ -26,7 +26,7 @@ namespace API.Controllers
         }
 
         [HttpPut("make-move")]
-        public async Task<ActionResult<MoveDto>> MakeMove(Move move)
+        public async Task<ActionResult<MoveDto>> MakeMove(MakeMoveDto move)
         {
             long userId = GetUserId();
             MoveDto moveDto = await _gameService.MakeMove(userId, move);

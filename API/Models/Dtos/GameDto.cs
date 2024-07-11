@@ -23,6 +23,7 @@ namespace API.Models.Dtos
         public int HalfMoveClock { get; set; }
         public int FullMoveNumber { get; set; }
         public string Status { get; set; }
+        public Move Move { get; set; }
 
 
 

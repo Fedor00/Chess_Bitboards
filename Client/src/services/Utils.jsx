@@ -1,4 +1,5 @@
 import { MIDNIGHT_PATH } from '../config'
+import { BLACK_WHITE_PATH } from '../config'
 
 // Convert a single number from 0-63 to i and j coordinates
 export function getCoordinates(number) {

@@ -12,7 +12,20 @@ function useChessBoardUtils(user, game) {
   const isPlayerTurn =
     (playerColor === 'white' && game?.isFirstPlayerWhite) ||
     (playerColor === 'black' && !game?.isFirstPlayerWhite)
-  return { playerColor, opponentUsername, isPlayerTurn }
+  const isPromotionMove = (fromIndex, toIndex, piece, game) => {
+    if (fromIndex < 8 || fromIndex > 15) return false
+    if (toIndex > 7 || toIndex < 0) return false
+    if (piece === 'P')
+      return game.whiteMoves.some(
+        (move) => move.from === fromIndex && move.to === toIndex,
+      )
+    else if (piece === 'p')
+      return game.blackMoves.some(
+        (move) => move.from === fromIndex && move.to === toIndex,
+      )
+    return false
+  }
+  return { playerColor, opponentUsername, isPlayerTurn, isPromotionMove }
 }
 
 export default useChessBoardUtils
