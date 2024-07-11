@@ -24,6 +24,8 @@ namespace API.Services
     {
         private readonly IGameRepository _gameRepository;
         private readonly IHubContext<ChessHub> _hubContext;
+
+
         public ChessEngineService(IGameRepository gameRepository,
 
                                 IChessEngineRepository chessEngineRepository,
@@ -92,14 +94,11 @@ namespace API.Services
             if (draw) { game.Status = Draw; }
             if (checkMate) { game.Status = board.Side == White ? BlackWin : WhiteWin; }
             if (stalemate) { game.Status = Stalemate; }
-            GameDto gameDto = MapToDto.CreateGameDto(game, board, bothSideMoves[0], bothSideMoves[1], new Move { From = from, To = to });
+            GameDto gameDto = MapToDto.CreateGameDto(game, board, bothSideMoves[0], bothSideMoves[1]);
             MoveDto moveDto = MapToDto.CreateMoveDto(gameDto, moveToMake, check, checkMate, stalemate, draw);
             //send the move to the client
-            if ((await _gameRepository.GetGameAsync(game.Id)).Status == Playing)
-            {
-                await _gameRepository.UpdateGame(game);
-                await _hubContext.Clients.User(game.FirstPlayerId.ToString()).SendAsync("MoveMade", moveDto);
-            }
+            await _hubContext.Clients.User(game.FirstPlayerId.ToString()).SendAsync("MoveMade", moveDto);
+            await _gameRepository.UpdateGame(game);
 
         }
 

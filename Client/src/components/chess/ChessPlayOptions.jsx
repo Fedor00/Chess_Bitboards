@@ -38,7 +38,7 @@ function ChessPlayOptions({
                 <input
                   type="range"
                   min="1"
-                  max="30"
+                  max="20"
                   value={stockfishDepth}
                   onChange={(e) => setStockfishDepth(parseInt(e.target.value))}
                   className="w-full"
@@ -59,7 +59,7 @@ function ChessPlayOptions({
                 <input
                   type="range"
                   min="1"
-                  max="15"
+                  max="10"
                   value={fedorDepth}
                   onChange={(e) => setFedorDepth(parseInt(e.target.value))}
                   className="w-full"

@@ -27,9 +27,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
 app.UseCors(corsBuilder =>
 {
-    corsBuilder.WithOrigins("http://192.168.0.150:5173")
+    corsBuilder.WithOrigins("http://localhost:5173")
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials();

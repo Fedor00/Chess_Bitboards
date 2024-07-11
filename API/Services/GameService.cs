@@ -112,20 +112,17 @@ namespace API.Services
             }
             return game;
         }
-        public async Task<MoveDto> MakeMove(long playerId, MakeMoveDto move)
+        public async Task<MoveDto> MakeMove(long playerId, Move move)
         {
             var game = await GetGame(playerId);
             if (game == null) throw new ArgumentException("Player is not in a game");
             if (game.Status != Playing) throw new InvalidOperationException("Game is not in progress");
-            var copyMove = move;
-
             if (IsBlacksTurn(game, playerId)) move = ReverseMove(move);
             var board = new Board(game.Fen);
             if (!IsPlayerTurn(game, new Board(game.Fen), playerId)) throw new ArgumentException("It's not your turn");
             var moveCount = 0;
             var moves = board.GenerateLegalMoves(ref moveCount);
-            int promotionPiece = move.Promotion != 'X' ? CharToPiece[move.Promotion] : 0;
-            var moveToMake = moves.FirstOrDefault(m => GetMoveSource(m) == move.From && GetMoveTarget(m) == move.To && (promotionPiece == 0 || GetMovePromoted(m) == promotionPiece));
+            var moveToMake = moves.FirstOrDefault(m => GetMoveSource(m) == move.From && GetMoveTarget(m) == move.To);
             if (moveToMake == 0) throw new ArgumentException("Invalid move");
             board.MakeMove(moveToMake, AllMoves);
             game.Fen = Fen.UpdateFen(board); //update fen
@@ -141,7 +138,7 @@ namespace API.Services
             if (stalemate) { game.Status = Stalemate; }
 
             await _gameRepository.UpdateGame(game);
-            var gameDto = MapToDto.CreateGameDto(game, board, bothLegalMoves[0], bothLegalMoves[1], new Move { From = move.From, To = move.To });
+            var gameDto = MapToDto.CreateGameDto(game, board, bothLegalMoves[0], bothLegalMoves[1]);
             var moveDto = MapToDto.CreateMoveDto(gameDto, moveToMake, check, checkMate, stalemate, draw);
             await _hubContext.Clients.User(game.FirstPlayerId.ToString()).SendAsync("MoveMade", moveDto);
             await _hubContext.Clients.User(game.SecondPlayerId.ToString()).SendAsync("MoveMade", moveDto);
@@ -256,9 +253,9 @@ namespace API.Services
             }
             return game.IsFirstPlayerWhite && playerId == game.SecondPlayerId || !game.IsFirstPlayerWhite && playerId == game.FirstPlayerId;
         }
-        private MakeMoveDto ReverseMove(MakeMoveDto move)
+        private Move ReverseMove(Move move)
         {
-            return new MakeMoveDto { From = h1 - move.From, To = h1 - move.To, Promotion = move.Promotion };
+            return new Move { From = h1 - move.From, To = h1 - move.To };
         }
 
     }

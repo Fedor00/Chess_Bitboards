@@ -1,18 +1,7 @@
 import { CHESS_SOUNDS } from '../config'
 
 export const playAudio = (audio) => {
-  if (!audio) return
-
-  // Check if the AudioContext is suspended and resume it
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-  if (audioContext.state === 'suspended') {
-    audioContext.resume()
-  }
-
-  // Play the audio
-  audio.play().catch((error) => {
-    console.error('Error playing audio:', error)
-  })
+  audio?.play()
 }
 export const getChessAudio = (moveData) => {
   let audio

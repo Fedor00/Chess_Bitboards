@@ -1,53 +1,71 @@
 using static API.Utils.EvaluationHelpers;
-
 namespace API.Logic.FedorChessEngine
 {
     public class TranspositionTable
     {
-        private Dictionary<ulong, TTEntry> table;
+        private TTEntry?[] table;
+        private int size;
 
-        public TranspositionTable()
+        public TranspositionTable(int size = 1_000_00000) // Default size, can be adjusted based on memory availability
         {
-            table = new Dictionary<ulong, TTEntry>();
+            this.size = size;
+            table = new TTEntry?[size];
         }
 
-        public void Store(ulong hashKey, int bestMove, int depth, int score, int flag, int ply)
+        private int ComputeIndex(ulong hash)
         {
-            // Adjust the score for mates to ensure the depth is taken into account.
+            // Simple modulo operation for hash indexing
+            return (int)(hash % (ulong)size);
+        }
+
+        public void Store(ulong hash, int bestMove, int depth, int score, int flag, int ply)
+        {
+            int index = ComputeIndex(hash);
             if (score < -MateScore) score -= ply;
             if (score > MateScore) score += ply;
-
-            TTEntry entry = new TTEntry
+            var entry = new TTEntry
             {
-                PositionHash = hashKey,
+                PositionHash = hash,
                 BestMove = bestMove,
                 Depth = depth,
                 Score = score,
                 Flag = flag
             };
-
-            table[hashKey] = entry;
+            table[index] = entry; // Store or overwrite the entry
         }
 
-        public int ReadHashEntry(ulong hashKey, int alpha, int beta, int depth, int ply, ref int bestMove)
+        public TTEntry? Retrieve(ulong hash)
         {
-            if (table.TryGetValue(hashKey, out TTEntry entry))
+            int index = ComputeIndex(hash);
+            return table[index]; // Returns null if no entry exists
+        }
+
+        public int ReadHashEntry(int alpha, int beta, int depth, ulong hash_key, int ply)
+        {
+            TTEntry? entry = Retrieve(hash_key);
+            if (entry != null)
             {
-                if (entry.Depth >= depth && entry.PositionHash == hashKey)
+                int score = entry.Value.Score;
+                if (score < -MateScore) score += ply;
+                if (score > MateScore) score -= ply;
+                // Check if the depth and flag conditions are met
+                if (entry.Value.Depth >= depth)
                 {
-                    int score = entry.Score;
-                    if (score < -MateScore) score += ply;
-                    if (score > MateScore) score -= ply;
-                    if (entry.Flag == HashFlagExact)
+                    if (entry.Value.Flag == HashFlagExact)
+                    {
                         return score;
-                    else if ((entry.Flag == HashFlagAlpha) && score <= alpha)
+                    }
+                    else if (entry.Value.Flag == HashFlagAlpha && score <= alpha)
+                    {
                         return alpha;
-                    else if ((entry.Flag == HashFlagBeta) && score >= beta)
+                    }
+                    else if (entry.Value.Flag == HashFlagBeta && score >= beta)
+                    {
                         return beta;
+                    }
                 }
-                bestMove = entry.BestMove;
             }
-            return NoHashEntry;
+            return int.MinValue; // Return null when no relevant entry is found
         }
     }
 }

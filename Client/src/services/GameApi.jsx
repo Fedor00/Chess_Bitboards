@@ -15,11 +15,11 @@ const getCurrentGame = async (user) => {
     throw new Error(error?.response?.data)
   }
 }
-const makeMoveApi = async (user, from, to, promotion) => {
+const makeMoveApi = async (user, from, to) => {
   try {
     const resp = await axios.put(
       `${GAME_API_URL}/make-move`,
-      { from, to, promotion },
+      { from, to },
       {
         headers: {
           'Content-Type': 'application/json',

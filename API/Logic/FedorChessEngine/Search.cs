@@ -73,7 +73,6 @@ namespace API.Logic.FedorChessEngine
         }
         private int Quiescence(Board board, int alpha, int beta)
         {
-
             Nodes++;
             if (Ply > 127)
                 return Evaluation.EvaluatePosition(board);
@@ -125,8 +124,7 @@ namespace API.Logic.FedorChessEngine
             PvLength[Ply] = Ply;
 
             if (Ply > 0 && IsRepetition(board.Hashkey) || board.HalfMoveClock >= 100) return 0;
-            int transpositionMove = 0;
-            if ((score = TranspositionTable.ReadHashEntry(board.Hashkey, alpha, beta, depth, Ply, ref transpositionMove)) != NoHashEntry)
+            if ((score = TranspositionTable.ReadHashEntry(alpha, beta, depth, board.Hashkey, Ply)) != int.MinValue)
                 return score;
             if (depth == 0) return Quiescence(board, alpha, beta);
             if (Ply > 127) return Evaluation.EvaluatePosition(board);
@@ -184,8 +182,7 @@ namespace API.Logic.FedorChessEngine
                 if (score > alpha)
                 {
                     hashFlag = HashFlagExact;
-                    if (!IsMoveCapture(moves[count]))
-                        HistoryMoves[GetMovePiece(moves[count]), GetMoveTarget(moves[count])] += depth;
+                    HistoryMoves[GetMovePiece(moves[count]), GetMoveTarget(moves[count])] += depth;
                     alpha = score;
                     PvTable[Ply, Ply] = moves[count];
                     for (int next = Ply + 1; next < PvLength[Ply + 1]; next++)
@@ -223,18 +220,25 @@ namespace API.Logic.FedorChessEngine
         }
         public void SortMoves(int[] moves, int moveCount)
         {
-            var scoredMoves = new List<(int move, int score)>();
-            for (int i = 0; i < moveCount; i++)
+            try
             {
-                int score = ScoreMove(moves[i]);
-                scoredMoves.Add((moves[i], score));
+                var scoredMoves = new List<(int move, int score)>();
+                for (int i = 0; i < moveCount; i++)
+                {
+                    int score = ScoreMove(moves[i]);
+                    scoredMoves.Add((moves[i], score));
+                }
+
+                scoredMoves.Sort((a, b) => b.score.CompareTo(a.score));
+
+                for (int i = 0; i < moveCount; i++)
+                {
+                    moves[i] = scoredMoves[i].move;
+                }
             }
-
-            scoredMoves.Sort((a, b) => b.score.CompareTo(a.score));
-
-            for (int i = 0; i < moveCount; i++)
+            catch (Exception e)
             {
-                moves[i] = scoredMoves[i].move;
+                Console.WriteLine(e.Message);
             }
 
 
@@ -315,7 +319,6 @@ namespace API.Logic.FedorChessEngine
             Array.Clear(PvLength, 0, PvLength.Length);
             Array.Clear(PvTable, 0, PvTable.Length);
             Array.Clear(RepetitionTable, 0, RepetitionTable.Length);
-            TranspositionTable = new TranspositionTable();
             Nodes = 0;
             Ply = 0;
             RepetitionIndex = 1;

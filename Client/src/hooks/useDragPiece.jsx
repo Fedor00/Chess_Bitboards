@@ -6,7 +6,6 @@ const initialState = {
   mousePosition: { x: 0, y: 0 },
   imgSize: { width: 0, height: 0 },
   selectedPiece: { i: null, j: null, piece: null },
-  isPromotion: false,
 }
 
 function dragReducer(state, action) {
@@ -18,7 +17,6 @@ function dragReducer(state, action) {
         mousePosition: action.mousePosition,
         imgSize: action.imgSize,
         selectedPiece: action.selectedPiece,
-        isPromotion: false,
       }
     case 'MOVE_DRAG':
       return {
@@ -39,20 +37,14 @@ function dragReducer(state, action) {
 
 export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
   const [state, dispatch] = useReducer(dragReducer, initialState)
+
   const handleDragStart = useCallback(
     (e, cell, rowIndex, colIndex) => {
       if (isOutOfBounds(rowIndex, colIndex) || cell === 'X') return
 
       const piece = game.pieces[rowIndex][colIndex]
       const selectedPiece = { i: rowIndex, j: colIndex, piece }
-
-      let mousePosition = { x: 0, y: 0 }
-
-      if (e.type === 'mousedown') {
-        mousePosition = { x: e.clientX, y: e.clientY }
-      } else if (e.type === 'touchstart') {
-        mousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-      }
+      const mousePosition = { x: e.clientX, y: e.clientY }
 
       if (chessBoardRef.current) {
         const { width } = chessBoardRef.current.getBoundingClientRect()
@@ -67,7 +59,7 @@ export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
         })
       }
     },
-    [game.pieces, chessBoardRef, dispatch],
+    [game.pieces, chessBoardRef],
   )
   const handleDragMove = useCallback(
     (x, y) => {
@@ -123,32 +115,16 @@ export function useDragPiece(game, chessBoardRef, makeMove, playerColor) {
       const chessBoard = chessBoardRef.current
       const rect = chessBoard.getBoundingClientRect()
       const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
-
-      if (e.type === 'mousemove') {
-        const clampedX = clamp(e.clientX, rect.left, rect.right)
-        const clampedY = clamp(e.clientY, rect.top, rect.bottom)
-        handleDragMove(clampedX, clampedY)
-      } else if (e.type === 'touchmove') {
-        for (let i = 0; i < e.touches.length; i++) {
-          const touch = e.touches[i]
-
-          const clampedX = clamp(touch.clientX, rect.left, rect.right)
-          const clampedY = clamp(touch.clientY, rect.top, rect.bottom)
-
-          handleDragMove(clampedX, clampedY, e)
-        }
-      }
+      const clampedX = clamp(e.clientX, rect.left, rect.right)
+      const clampedY = clamp(e.clientY, rect.top, rect.bottom)
+      handleDragMove(clampedX, clampedY)
     }
     document.addEventListener('mouseup', mouseUpHandler)
-    document.addEventListener('touchmove', mouseMoveHandler)
-    document.addEventListener('touchend', mouseUpHandler)
-    document.addEventListener('mousemove', mouseMoveHandler, { passive: false })
+    document.addEventListener('mousemove', mouseMoveHandler)
 
     return () => {
       document.removeEventListener('mouseup', mouseUpHandler)
       document.removeEventListener('mousemove', mouseMoveHandler)
-      document.removeEventListener('touchmove', mouseMoveHandler)
-      document.removeEventListener('touchend', mouseUpHandler)
     }
   }, [chessBoardRef, handleDragEnd, handleDragMove])
 

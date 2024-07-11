@@ -3,7 +3,7 @@ using static API.Utils.BitbboardUtils;
 using static API.Utils.ChessHelpers;
 namespace API.Logic
 {
-    public static  class Fen
+    public class Fen
     {
         public static void InitializeBoard(Board board, string fen)
         {
